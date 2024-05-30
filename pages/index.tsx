@@ -206,7 +206,7 @@ export default function Home() {
           </div>
         </div>
       }
-      {!hasUserAccount &&
+      {publicKey && !hasUserAccount &&
         <div className="flex justify-center items-start w-full h-full absolute top-0 left-0 bg-black/80">
           <div className="flex flex-col p-10 gap-5 justify-center items-center bg-black border-white border-2 rounded-lg mt-10">
             <BasicButton text="Create User Account" onClick={onCreateUserAccount} />
