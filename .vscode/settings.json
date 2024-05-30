@@ -1,0 +1,20 @@
+{
+  "cSpell.words": [
+    "smoothscroll",
+    "Solscan"
+  ],
+  "editor.formatOnSave": true,
+  "html.format.wrapLineLength": 0,
+  "javascript.format.semicolons": "insert",
+  "typescript.format.semicolons": "insert",
+  "javascript.format.insertSpaceAfterCommaDelimiter": true,
+  "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": true,
+  "reactSnippets.settings.tabWidth": 4,
+  "css.lint.unknownAtRules": "ignore",
+  "[css]": {
+    "editor.defaultFormatter": "bradlc.vscode-tailwindcss"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
+}

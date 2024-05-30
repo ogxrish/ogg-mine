@@ -1,118 +1,302 @@
-import Image from "next/image";
-import { Inter } from "next/font/google";
+import BasicButton from "@/components/BasicButton";
+import { checkUserInitialized, claim, createUserAccount, getData, getGlobalData, mint, programAuthority, programId, stake, umi, unstake } from "@/components/utils";
+import Window from "@/components/Window";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useEffect, useState } from "react";
+import { Metadata, Metaplex } from "@metaplex-foundation/js";
+import { Connection, PublicKey } from "@solana/web3.js";
+import TransactionPending from "@/components/TransactionPending";
+import TransactionFailure from "@/components/TransactionFailure";
+import TransactionSuccess from "@/components/TransactionSuccess";
+import NFTWidget from "@/components/NFTWidget";
+import SkeletonSquare from "@/components/SkeletonSquare";
+import MintGraph from "@/components/MintGraph";
+import StakeGraph from "@/components/StakeGraph";
+import LoadedText from "@/components/LoadedText";
+import BigLoading from "@/components/BigLoading";
+import WalletButton from "@/components/WalletButton";
+import MagicEdenLink from "@/components/MagicEdenLink";
+import TensorLink from "@/components/TensorLink";
 
-const inter = Inter({ subsets: ["latin"] });
-
+const network = "https://devnet.helius-rpc.com/?api-key=7676ad08-d009-4d7b-ad36-2df7214b03c1";
+type NFT = {
+  mint: PublicKey;
+  name: string;
+  image: string;
+  selected: boolean;
+  staked: boolean;
+};
 export default function Home() {
+  const { publicKey, connected } = useWallet();
+  const [sendingTransaction, setSendingTransaction] = useState<boolean>(false);
+  const [failedTransaction, setFailedTransaction] = useState<boolean>(false);
+  const [succeededTransaction, setSucceededTransaction] = useState<boolean>(false);
+  const [nfts, setNfts] = useState<NFT[]>([]);
+  const [loadedNfts, setLoadedNfts] = useState<boolean>(false);
+  const [globalData, setGlobalData] = useState<Awaited<ReturnType<typeof getGlobalData>>>();
+  const [userData, setUserData] = useState<Awaited<ReturnType<typeof getData>>>();
+  const [hasUserAccount, setHasUserAccount] = useState<boolean>(false);
+  useEffect(() => {
+    updateGlobalData();
+    const interval = setInterval(updateGlobalData, 5000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+  useEffect(() => {
+    if (!publicKey) return;
+    (async () => {
+      setHasUserAccount(await checkUserInitialized(publicKey));
+    })();
+  }, [publicKey]);
+  const updateGlobalData = () => {
+    getGlobalData().then((value) => {
+      setGlobalData(value);
+    });
+  };
+  useEffect(() => {
+    if (!connected || !publicKey) return;
+    (async () => {
+      const connection = new Connection(network);
+      const metaplex = Metaplex.make(connection);
+      const all = await metaplex.nfts().findAllByOwner({ owner: publicKey });
+      const nfts: any = all.filter((nft) => {
+        for (const creator of nft.creators) {
+          if (creator.verified) {
+            if (creator.address.equals(programAuthority)) {
+              return true;
+            }
+          }
+          return false;
+        }
+      });
+      const data = await getData(publicKey);
+      setUserData(data);
+      setNfts([...nfts, ...data.staked].map((nft: any) => {
+        return {
+          mint: nft.mintAddress || nft,
+          image: "/placeholder-square.jpg",
+          name: nft.name || "Spore",
+          selected: false,
+          staked: !Boolean(nft.mintAddress),
+        };
+      }));
+      console.log("loaded nfts");
+      setLoadedNfts(true);
+    })();
+
+  }, [connected, publicKey]);
+  const select = async (mint: PublicKey) => {
+    setNfts((prevNfts) =>
+      prevNfts.map((nft) =>
+        nft.mint.equals(mint) ? { ...nft, selected: !nft.selected } : nft
+      )
+    );
+  };
+  const onStake = async () => {
+    if (!publicKey) return;
+    const toStake = nfts.filter((nft) => nft.selected);
+    for (const nft of toStake) {
+      if (!nft.staked) {
+        try {
+          setSendingTransaction(true);
+          await stake(publicKey, nft.mint);
+          setSucceededTransaction(true);
+          setNfts(prevNfts =>
+            prevNfts.map(n => n.mint.equals(nft.mint) ? { ...n, staked: true } : { ...n })
+          );
+        } catch (e) {
+          console.error(e);
+          setFailedTransaction(true);
+        } finally {
+          setSendingTransaction(false);
+          setTimeout(() => {
+            setFailedTransaction(false);
+            setSucceededTransaction(false);
+          }, 1000);
+        }
+      }
+    }
+  };
+  const onUnstake = async () => {
+    if (!publicKey) return;
+    const toUnstake = nfts.filter((nft) => nft.selected);
+    for (const nft of toUnstake) {
+      if (nft.staked) {
+        try {
+          setSendingTransaction(true);
+          await unstake(publicKey, nft.mint);
+          setSucceededTransaction(true);
+          setNfts(prevNfts =>
+            prevNfts.map(n => n.mint.equals(nft.mint) ? { ...n, staked: false } : { ...n })
+          );
+
+        } catch (e) {
+          console.error(e);
+          setFailedTransaction(true);
+        } finally {
+          setSendingTransaction(false);
+          setTimeout(() => {
+            setFailedTransaction(false);
+            setSucceededTransaction(false);
+          }, 1000);
+        }
+      }
+    }
+  };
+  const onClaim = async () => {
+    if (!publicKey) return;
+    try {
+      setSendingTransaction(true);
+      await claim(publicKey);
+      setSucceededTransaction(true);
+    } catch (e) {
+      console.error(e);
+      setFailedTransaction(true);
+    } finally {
+      setSendingTransaction(false);
+      setTimeout(() => {
+        setFailedTransaction(false);
+        setSucceededTransaction(false);
+      }, 1000);
+    }
+  };
+  const onMint = async () => {
+    if (!publicKey) return;
+    try {
+      setSendingTransaction(true);
+      const minted = await mint(publicKey);
+      console.log(minted);
+      setSucceededTransaction(true);
+    } catch (e) {
+      console.error(e);
+      setFailedTransaction(true);
+    } finally {
+      setSendingTransaction(false);
+      setTimeout(() => {
+        setFailedTransaction(false);
+        setSucceededTransaction(false);
+      }, 1000);
+    }
+  };
+  const onCreateUserAccount = async () => {
+    if (!publicKey) return;
+    try {
+      await createUserAccount(publicKey);
+      setSucceededTransaction(true);
+      setHasUserAccount(true);
+    } catch (e) {
+      console.error(e);
+      setFailedTransaction(true);
+    } finally {
+      setSendingTransaction(false);
+      setTimeout(() => {
+        setFailedTransaction(false);
+        setSucceededTransaction(false);
+      }, 1000);
+    }
+  };
   return (
-    <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
-    >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">pages/index.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className="flex flex-col justify-center items-center gap-6 px-6 mt-6 w-full relative">
+      {!publicKey &&
+        <div className="flex justify-center items-start w-full h-full absolute top-0 left-0 bg-black/80">
+          <div className="flex flex-col p-10 gap-5 justify-center items-center bg-black border-white border-2 rounded-lg mt-10">
+            <p>Connect Wallet</p>
+            <WalletButton />
+          </div>
+        </div>
+      }
+      {!hasUserAccount &&
+        <div className="flex justify-center items-start w-full h-full absolute top-0 left-0 bg-black/80">
+          <div className="flex flex-col p-10 gap-5 justify-center items-center bg-black border-white border-2 rounded-lg mt-10">
+            <BasicButton text="Create User Account" onClick={onCreateUserAccount} />
+          </div>
+        </div>
+      }
+      {succeededTransaction &&
+        <div className="fixed bottom-0 right-0 mr-6 mb-6">
+          <TransactionSuccess />
+        </div>
+      }
+      {failedTransaction &&
+        <div className="fixed bottom-0 right-0 mr-6 mb-6">
+          <TransactionFailure />
+        </div>
+      }
+      {sendingTransaction &&
+        <div className="fixed bottom-0 right-0 mr-6 mb-6">
+          <TransactionPending />
+        </div>
+      }
+      <div className="grid grid-cols-2 gap-6 w-full">
+        <Window>
+          <div className="flex flex-col justify-between gap-2 w-full h-full">
+            <LoadedText start="NFTs Minted" value={globalData?.minted} />
+            <LoadedText start="NFTs in Circulation" value={globalData?.circulation} />
+            <TextInfo text="Mint curve progress" info="" />
+            <MintGraph pos={globalData?.minted ?? 0} />
+            <LoadedText start="Current Mint Price" text="&%%& $SPORE" value={globalData?.mintPrice} />
+            <div className="flex items-center justify-center w-full">
+              <BasicButton onClick={onMint} text="Mint" />
+            </div>
+          </div>
+        </Window>
+        <Window>
+          <div className="w-full h-full flex flex-col justify-between gap-2">
+            <LoadedText start="NFTs Staked" value={globalData?.staked} />
+            <TextInfo text="Stake curve progress" info="" />
+            <StakeGraph pos={globalData?.staked ?? 0} />
+            <LoadedText start="Current Reward" text="&%%& / nft / day" value={globalData?.stakeReward} />
+            {loadedNfts && nfts.length === 0 ?
+              <div className="flex flex-col justify-center items-center gap-2">
+                <p className="w-full text-center underline">
+                  {`You don't have any NFTs`}
+                </p>
+                <div className="flex flex-row justify-center items-center gap-2">
+                  <MagicEdenLink />
+                  <TensorLink />
+                </div>
+              </div>
+              :
+              <div className="flex gap-4 overflow-x-auto">
+                {loadedNfts ?
+                  nfts.map((nft, i) => <NFTWidget key={i} {...nft} onSelect={() => select(nft.mint)} />)
+                  :
+                  Array.from({ length: 4 }).map((_, i: number) =>
+                    <div key={i} className="inline-block w-[240px]">
+                      <SkeletonSquare key={i} />
+                    </div>
+                  )
+                }
+              </div>
+            }
+            <div className="flex flex-row justify-center items-center w-full gap-2">
+              <BasicButton onClick={onStake} text="Stake" />
+              <BasicButton onClick={onUnstake} text="Unstake" />
+            </div>
+          </div>
+        </Window>
+      </div>
+      <div className="flex flex-row justify-center items-center w-full">
+        <div className="w-[800px]">
+          <Window>
+            <div className="flex flex-col justify-between items-center h-full w-full gap-2">
+              <BigLoading amount={userData?.claimable} />
+              <p className="italic text-center">{`Earning ${userData?.earning || "0"} $SPORE / day`}</p>
+              <BasicButton onClick={onClaim} text="Claim" />
+            </div>
+          </Window>
         </div>
       </div>
+    </div>
+  );
+}
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+function TextInfo({ text, info }: { text: string, info: string; }) {
+  return (
+    <div className="flex flex-row gap-2 hover:scale-105 transition-all duration-200 text-xl">
+      <p className="underline font-bold">{text}</p>
+      <p>{info}</p>
+    </div>
   );
 }
