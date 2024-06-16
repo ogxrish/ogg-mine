@@ -383,11 +383,11 @@ export default function Home() {
 //   );
 // }
 
-function TextInfo({ text, info }: { text: string, info: string; }) {
-  return (
-    <div className="flex flex-row gap-2 hover:scale-105 transition-all duration-200 text-xl">
-      <p className="underline font-bold">{text}</p>
-      <p>{info}</p>
-    </div>
-  );
-}
+// function TextInfo({ text, info }: { text: string, info: string; }) {
+//   return (
+//     <div className="flex flex-row gap-2 hover:scale-105 transition-all duration-200 text-xl">
+//       <p className="underline font-bold">{text}</p>
+//       <p>{info}</p>
+//     </div>
+//   );
+// }

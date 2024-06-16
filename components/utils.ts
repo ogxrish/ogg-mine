@@ -6,7 +6,6 @@ import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { findMasterEditionPda, findMetadataPda, MPL_TOKEN_METADATA_PROGRAM_ID, mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
 
 export const programId = new PublicKey("CMLBhrxJKPXr8GEJznTvgj9yiEskNH1anA2UUpQ5kV4G");
-const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
 const [globalAccount] = PublicKey.findProgramAddressSync(
     [Buffer.from("global")],
     programId,
@@ -20,6 +19,7 @@ const [mint] = PublicKey.findProgramAddressSync(
     programId
 );
 export async function getGlobalAccount() {
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     const program = new Program(mycelium2 as any, programId, provider);
     try {
@@ -30,6 +30,7 @@ export async function getGlobalAccount() {
     }
 }
 export async function isUserMining(wallet: PublicKey): Promise<boolean> {
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     const program = new Program(mycelium2 as any, programId, provider);
     try {
@@ -44,6 +45,7 @@ export async function isUserMining(wallet: PublicKey): Promise<boolean> {
     }
 }
 export async function initialize(wallet: PublicKey) {
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     const program = new Program(mycelium2 as any, programId, provider);
     await program.methods.initialize().accounts({
@@ -54,6 +56,7 @@ export async function initialize(wallet: PublicKey) {
     }).rpc();
 }
 export async function updateState(wallet: PublicKey) {
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     const program = new Program(mycelium2 as any, programId, provider);
     await program.methods.updateState().accounts({
@@ -62,6 +65,7 @@ export async function updateState(wallet: PublicKey) {
     }).rpc();
 }
 export async function mine(wallet: PublicKey) {
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     const program = new Program(mycelium2 as any, programId, provider);
     const [mineAccount] = PublicKey.findProgramAddressSync(
@@ -75,6 +79,7 @@ export async function mine(wallet: PublicKey) {
     }).rpc();
 }
 export async function claim(wallet: PublicKey) {
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     const program = new Program(mycelium2 as any, programId, provider);
     const [mineAccount] = PublicKey.findProgramAddressSync(
