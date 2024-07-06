@@ -8,6 +8,7 @@ import TransactionSuccess from "@/components/TransactionSuccess";
 import WalletButton from "@/components/WalletButton";
 import { getGlobalAccount } from "@/components/utils";
 import LoadedText from "@/components/LoadedText";
+import Countdown from "@/components/Countdown";
 
 type GlobalAccount = {
   miners: number,
@@ -20,10 +21,14 @@ export default function Home() {
   const [failedTransaction, setFailedTransaction] = useState<boolean>(false);
   const [sendingTransaction, setSendingTransaction] = useState<boolean>(false);
   const [globalAccount, setGlobalAccount] = useState<GlobalAccount>();
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [state, setState] = useState<number>(0);
   useEffect(() => {
     (async () => {
       const globalAccount: any = await getGlobalAccount();
       if (globalAccount) {
+        const diff = (Date.now() / 1000) - globalAccount.epochEnd.toNumber();
+        setTimeLeft(diff);
         setGlobalAccount({
           miners: globalAccount.miners.toNumber(),
           epochEnd: globalAccount.epochEnd.toNumber(),
@@ -62,7 +67,7 @@ export default function Home() {
     }
   };
   return (
-    <div className="flex flex-col justify-center items-center gap-6 px-6 mt-6 w-full relative">
+    <div className="flex flex-col justify-center items-center gap-3 md:gap-6 px-3 md:px-6 mt-6 w-full h-full relative">
       {!publicKey &&
         <div className="flex justify-center items-start w-full h-full absolute top-0 left-0 bg-black/80">
           <div className="flex flex-col p-10 gap-5 justify-center items-center bg-black border-white border-2 rounded-lg mt-10">
@@ -86,24 +91,31 @@ export default function Home() {
           <TransactionPending />
         </div>
       }
-      <div className="grid grid-cols-2 gap-6 w-full">
+      <div className="flex flex-row justify-center items-center gap-4">
+        <BasicButton onClick={() => setState(0)} text="Mine" disabled={state == 0} />
+        <BasicButton onClick={() => setState(1)} text="Claim" disabled={state == 1} />
+      </div>
+      <div className="w-full h-full p-2 md:p-16 lg:p-20 xl:p-24">
         <Window>
-          <div className="w-full h-full flex flex-col justify-between items-start gap-2">
-            <LoadedText start="Miners " value={globalAccount?.miners} />
-            <LoadedText start="Mining Reward" value={0} />
-            <LoadedText start="Mining Epoch Remaining" value={0} />
-            <div className="w-full flex flex-row justify-center items-center">
-              <BasicButton onClick={onMine} text="Mine" disabled={globalAccount?.state !== 1} />
-            </div>
-          </div>
-        </Window>
-        <Window>
-          <div className="w-full h-full flex flex-col justify-between items-start gap-2">
-            <LoadedText start="Claiming Epoch Starts" value={0} />
-            <LoadedText start="$SPORE to claim" value={0} />
-            <div className="w-full flex flex-row justify-center items-center">
-              <BasicButton onClick={onClaim} text="Claim" disabled={globalAccount?.state !== 2} />
-            </div>
+          <div className="w-full h-full flex flex-col justify-center items-center gap-3 md:gap-6">
+
+            {state == 0 ?
+              <>
+                <p className="uppercase text-4xl lg:text-6xl font-extrabold">MINE</p>
+                <p className="uppercase text-xs md:text-sm lg:text-base font-extrabold mb-10">{`Epoch 0xff112`}</p>
+                <LoadedText start="Miners " value={globalAccount?.miners} />
+                <LoadedText start="Mining Reward" value={0} />
+                <LoadedText start="Mining Cost" value={0} />
+                <BasicButton onClick={onMine} text="Mine" disabled={globalAccount?.state !== 1} />
+              </>
+              :
+              <>
+                <p className="uppercase text-4xl lg:text-6xl font-extrabold mb-10">CLAIM</p>
+                <p className="text-4xl font-bold">{`${0} $SPORE`}</p>
+                <BasicButton onClick={onClaim} text="Claim" />
+              </>
+            }
+            <Countdown timeLeft={timeLeft} />
           </div>
         </Window>
       </div>

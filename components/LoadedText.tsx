@@ -7,7 +7,7 @@ export default function LoadedText({ start, text, value }: { start: string, text
         return (
             <div className="flex flex-row justify-start items-center gap-2 text-xl">
                 <p className="underline font-bold">{start}</p>
-                <p>:</p>
+                <p>{start !== "" ? ":" : ""}</p>
                 <p>{`${replaced}`}</p>
             </div>
         );
@@ -15,7 +15,7 @@ export default function LoadedText({ start, text, value }: { start: string, text
         return (
             <div className="flex flex-row justify-start items-center gap-2 text-xl">
                 <p className="underline font-bold">{start}</p>
-                <p>:</p>
+                <p>{start !== "" ? ":" : ""}</p>
                 <ContentLoader
                     speed={1}
                     width="160"
