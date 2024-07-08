@@ -6,14 +6,15 @@ import TransactionPending from "@/components/TransactionPending";
 import TransactionFailure from "@/components/TransactionFailure";
 import TransactionSuccess from "@/components/TransactionSuccess";
 import WalletButton from "@/components/WalletButton";
-import { getGlobalAccount } from "@/components/utils";
+import { calculateMiningPrice, claim, getClaimableAmount, getEpochAccount, getGlobalAccount, isUserMining, mine, newEpoch, toHexString } from "@/components/utils";
 import LoadedText from "@/components/LoadedText";
 import Countdown from "@/components/Countdown";
 
 type GlobalAccount = {
   miners: number,
   epochEnd: number,
-  state: number,
+  epoch: number,
+  reward: number,
 };
 export default function Home() {
   const { publicKey } = useWallet();
@@ -23,22 +24,66 @@ export default function Home() {
   const [globalAccount, setGlobalAccount] = useState<GlobalAccount>();
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [state, setState] = useState<number>(0);
+  const [miningCost, setMiningCost] = useState<number>();
+  const [isMining, setIsMining] = useState<boolean>(false);
+  const [claimable, setClaimable] = useState<number>(0);
   useEffect(() => {
     (async () => {
       const globalAccount: any = await getGlobalAccount();
       if (globalAccount) {
-        const diff = (Date.now() / 1000) - globalAccount.epochEnd.toNumber();
+        const diff = globalAccount.epochEnd.toNumber() - Date.now() / 1000;
         setTimeLeft(diff);
+        const epochAccount: any = await getEpochAccount(globalAccount.epoch.toNumber());
         setGlobalAccount({
-          miners: globalAccount.miners.toNumber(),
+          miners: epochAccount.totalMiners.toNumber(),
           epochEnd: globalAccount.epochEnd.toNumber(),
-          state: globalAccount.state
+          epoch: globalAccount.epoch.toNumber(),
+          reward: globalAccount.reward.toNumber(),
         });
+        console.log(globalAccount.reward.toNumber());
+        setMiningCost(calculateMiningPrice(epochAccount.totalMiners.toNumber()));
       }
     })();
   }, []);
+  useEffect(() => {
+    if (!publicKey || !globalAccount) return;
+    (async () => {
+      const amount = await getClaimableAmount(publicKey, globalAccount.epoch);
+      setClaimable(amount);
+    })();
+  }, [publicKey, globalAccount]);
+  useEffect(() => {
+    if (publicKey && globalAccount && !isMining) {
+      (async () => {
+        setIsMining(await isUserMining(publicKey, globalAccount.epoch));
+      })();
+    }
+  }, [publicKey, globalAccount, isMining]);
   const onMine = async () => {
+    if (!publicKey || !globalAccount) return;
     try {
+      await mine(publicKey, globalAccount.epoch, timeLeft);
+      if (timeLeft < 0) {
+        setTimeLeft(86400);
+        setGlobalAccount(globalAccount => {
+          return {
+            miners: 1,
+            epochEnd: Date.now() + 86400,
+            epoch: globalAccount!.epoch + 1,
+            reward: globalAccount!.reward * 7 / 8
+          };
+        });
+        setMiningCost(calculateMiningPrice(1));
+      } else {
+        setGlobalAccount((globalAccount: any) => {
+          return {
+            ...globalAccount,
+            miners: globalAccount.miners + 1
+          };
+        });
+        setMiningCost(calculateMiningPrice(globalAccount.miners + 1));
+      }
+      setIsMining(true);
       setSucceededTransaction(true);
     } catch (e) {
       console.error(e);
@@ -48,12 +93,14 @@ export default function Home() {
       setTimeout(() => {
         setFailedTransaction(false);
         setSucceededTransaction(false);
-      }, 1000);
+      }, 5000);
     }
   };
   const onClaim = async () => {
+    if (!publicKey || !globalAccount) return;
     try {
-
+      await claim(publicKey, globalAccount.epoch);
+      setClaimable(0);
       setSucceededTransaction(true);
     } catch (e) {
       console.error(e);
@@ -67,7 +114,7 @@ export default function Home() {
     }
   };
   return (
-    <div className="flex flex-col justify-center items-center gap-3 md:gap-6 px-3 md:px-6 mt-6 w-full h-full relative">
+    <div className="flex flex-col justify-center items-center gap-2 md:gap-3 xl:gap-6 px-3 md:px-6 mt-6 w-full h-full relative">
       {!publicKey &&
         <div className="flex justify-center items-start w-full h-full absolute top-0 left-0 bg-black/80">
           <div className="flex flex-col p-10 gap-5 justify-center items-center bg-black border-white border-2 rounded-lg mt-10">
@@ -95,23 +142,32 @@ export default function Home() {
         <BasicButton onClick={() => setState(0)} text="Mine" disabled={state == 0} />
         <BasicButton onClick={() => setState(1)} text="Claim" disabled={state == 1} />
       </div>
-      <div className="w-full h-full p-2 md:p-16 lg:p-20 xl:p-24">
+      <div className="w-full h-full">
         <Window>
           <div className="w-full h-full flex flex-col justify-center items-center gap-3 md:gap-6">
 
             {state == 0 ?
               <>
-                <p className="uppercase text-4xl lg:text-6xl font-extrabold">MINE</p>
-                <p className="uppercase text-xs md:text-sm lg:text-base font-extrabold mb-10">{`Epoch 0xff112`}</p>
+                <div className="flex flex-col justify-center items-center gap-1 md:gap-2 mb-4 md:mb-6 lg:mb-10">
+                  <p className="uppercase text-4xl lg:text-6xl font-extrabold">MINE</p>
+                  <p className="text-xs md:text-sm lg:text-base font-extrabold">{`EPOCH 0x${toHexString(globalAccount?.epoch || 0)}`}</p>
+                </div>
                 <LoadedText start="Miners " value={globalAccount?.miners} />
-                <LoadedText start="Mining Reward" value={0} />
-                <LoadedText start="Mining Cost" value={0} />
-                <BasicButton onClick={onMine} text="Mine" disabled={globalAccount?.state !== 1} />
+                <LoadedText start="Mining Reward" text="&%%& $SPORE" value={globalAccount?.reward} />
+                <LoadedText start="Mining Cost" text="&%%& SOL" value={miningCost} />
+                <div className="flex flex-col justify-center items-center gap-1 md:gap-2">
+                  {timeLeft < 0 ?
+                    <BasicButton onClick={onMine} text="Mine in new epoch" />
+                    :
+                    <BasicButton onClick={onMine} text="Mine" disabled={isMining} />
+                  }
+                  {isMining && <p>You are already mining!</p>}
+                </div>
               </>
               :
               <>
                 <p className="uppercase text-4xl lg:text-6xl font-extrabold mb-10">CLAIM</p>
-                <p className="text-4xl font-bold">{`${0} $SPORE`}</p>
+                <p className="text-4xl font-bold">{`${claimable} $SPORE`}</p>
                 <BasicButton onClick={onClaim} text="Claim" />
               </>
             }
@@ -122,284 +178,3 @@ export default function Home() {
     </div>
   );
 }
-// type NFT = {
-//   mint: PublicKey;
-//   name: string;
-//   image: string;
-//   selected: boolean;
-//   staked: boolean;
-// };
-// export default function Home() {
-//   const { publicKey, connected } = useWallet();
-//   const [sendingTransaction, setSendingTransaction] = useState<boolean>(false);
-//   const [failedTransaction, setFailedTransaction] = useState<boolean>(false);
-//   const [succeededTransaction, setSucceededTransaction] = useState<boolean>(false);
-//   const [nfts, setNfts] = useState<NFT[]>([]);
-//   const [loadedNfts, setLoadedNfts] = useState<boolean>(false);
-//   const [globalData, setGlobalData] = useState<Awaited<ReturnType<typeof getGlobalData>>>();
-//   const [userData, setUserData] = useState<Awaited<ReturnType<typeof getData>>>();
-//   const [hasUserAccount, setHasUserAccount] = useState<boolean>(false);
-//   useEffect(() => {
-//     updateGlobalData();
-//     const interval = setInterval(updateGlobalData, 5000);
-//     return () => {
-//       clearInterval(interval);
-//     };
-//   }, []);
-//   useEffect(() => {
-//     if (!publicKey) return;
-//     (async () => {
-//       setHasUserAccount(await checkUserInitialized(publicKey));
-//     })();
-//   }, [publicKey]);
-//   const updateGlobalData = () => {
-//     getGlobalData().then((value) => {
-//       setGlobalData(value);
-//     });
-//   };
-//   useEffect(() => {
-//     if (!connected || !publicKey) return;
-//     (async () => {
-//       const connection = new Connection(network);
-//       const metaplex = Metaplex.make(connection);
-//       const all = await metaplex.nfts().findAllByOwner({ owner: publicKey });
-//       const nfts: any = all.filter((nft) => {
-//         for (const creator of nft.creators) {
-//           if (creator.verified) {
-//             if (creator.address.equals(programAuthority)) {
-//               return true;
-//             }
-//           }
-//           return false;
-//         }
-//       });
-//       const data = await getData(publicKey);
-//       setUserData(data);
-//       setNfts([...nfts, ...data.staked].map((nft: any) => {
-//         return {
-//           mint: nft.mintAddress || nft,
-//           image: "/placeholder-square.jpg",
-//           name: nft.name || "Spore",
-//           selected: false,
-//           staked: !Boolean(nft.mintAddress),
-//         };
-//       }));
-//       console.log("loaded nfts");
-//       setLoadedNfts(true);
-//     })();
-
-//   }, [connected, publicKey]);
-//   const select = async (mint: PublicKey) => {
-//     setNfts((prevNfts) =>
-//       prevNfts.map((nft) =>
-//         nft.mint.equals(mint) ? { ...nft, selected: !nft.selected } : nft
-//       )
-//     );
-//   };
-//   const onStake = async () => {
-//     if (!publicKey) return;
-//     const toStake = nfts.filter((nft) => nft.selected);
-//     for (const nft of toStake) {
-//       if (!nft.staked) {
-//         try {
-//           setSendingTransaction(true);
-//           await stake(publicKey, nft.mint);
-//           setSucceededTransaction(true);
-//           setNfts(prevNfts =>
-//             prevNfts.map(n => n.mint.equals(nft.mint) ? { ...n, staked: true } : { ...n })
-//           );
-//         } catch (e) {
-//           console.error(e);
-//           setFailedTransaction(true);
-//         } finally {
-//           setSendingTransaction(false);
-//           setTimeout(() => {
-//             setFailedTransaction(false);
-//             setSucceededTransaction(false);
-//           }, 1000);
-//         }
-//       }
-//     }
-//   };
-//   const onUnstake = async () => {
-//     if (!publicKey) return;
-//     const toUnstake = nfts.filter((nft) => nft.selected);
-//     for (const nft of toUnstake) {
-//       if (nft.staked) {
-//         try {
-//           setSendingTransaction(true);
-//           await unstake(publicKey, nft.mint);
-//           setSucceededTransaction(true);
-//           setNfts(prevNfts =>
-//             prevNfts.map(n => n.mint.equals(nft.mint) ? { ...n, staked: false } : { ...n })
-//           );
-
-//         } catch (e) {
-//           console.error(e);
-//           setFailedTransaction(true);
-//         } finally {
-//           setSendingTransaction(false);
-//           setTimeout(() => {
-//             setFailedTransaction(false);
-//             setSucceededTransaction(false);
-//           }, 1000);
-//         }
-//       }
-//     }
-//   };
-//   const onClaim = async () => {
-//     if (!publicKey) return;
-//     try {
-//       setSendingTransaction(true);
-//       await claim(publicKey);
-//       setSucceededTransaction(true);
-//     } catch (e) {
-//       console.error(e);
-//       setFailedTransaction(true);
-//     } finally {
-//       setSendingTransaction(false);
-//       setTimeout(() => {
-//         setFailedTransaction(false);
-//         setSucceededTransaction(false);
-//       }, 1000);
-//     }
-//   };
-//   const onMint = async () => {
-//     if (!publicKey) return;
-//     try {
-//       setSendingTransaction(true);
-//       const minted = await mint(publicKey);
-//       console.log(minted);
-//       setSucceededTransaction(true);
-//     } catch (e) {
-//       console.error(e);
-//       setFailedTransaction(true);
-//     } finally {
-//       setSendingTransaction(false);
-//       setTimeout(() => {
-//         setFailedTransaction(false);
-//         setSucceededTransaction(false);
-//       }, 1000);
-//     }
-//   };
-//   const onCreateUserAccount = async () => {
-//     if (!publicKey) return;
-//     try {
-//       await createUserAccount(publicKey);
-//       setSucceededTransaction(true);
-//       setHasUserAccount(true);
-//     } catch (e) {
-//       console.error(e);
-//       setFailedTransaction(true);
-//     } finally {
-//       setSendingTransaction(false);
-//       setTimeout(() => {
-//         setFailedTransaction(false);
-//         setSucceededTransaction(false);
-//       }, 1000);
-//     }
-//   };
-//   return (
-//     <div className="flex flex-col justify-center items-center gap-6 px-6 mt-6 w-full relative">
-//       {!publicKey &&
-//         <div className="flex justify-center items-start w-full h-full absolute top-0 left-0 bg-black/80">
-//           <div className="flex flex-col p-10 gap-5 justify-center items-center bg-black border-white border-2 rounded-lg mt-10">
-//             <p>Connect Wallet</p>
-//             <WalletButton />
-//           </div>
-//         </div>
-//       }
-//       {publicKey && !hasUserAccount &&
-//         <div className="flex justify-center items-start w-full h-full absolute top-0 left-0 bg-black/80">
-//           <div className="flex flex-col p-10 gap-5 justify-center items-center bg-black border-white border-2 rounded-lg mt-10">
-//             <BasicButton text="Create User Account" onClick={onCreateUserAccount} />
-//           </div>
-//         </div>
-//       }
-//       {succeededTransaction &&
-//         <div className="fixed bottom-0 right-0 mr-6 mb-6">
-//           <TransactionSuccess />
-//         </div>
-//       }
-//       {failedTransaction &&
-//         <div className="fixed bottom-0 right-0 mr-6 mb-6">
-//           <TransactionFailure />
-//         </div>
-//       }
-//       {sendingTransaction &&
-//         <div className="fixed bottom-0 right-0 mr-6 mb-6">
-//           <TransactionPending />
-//         </div>
-//       }
-//       <div className="grid grid-cols-2 gap-6 w-full">
-//         <Window>
-//           <div className="flex flex-col justify-between gap-2 w-full h-full">
-//             <LoadedText start="NFTs Minted" value={globalData?.minted} />
-//             <LoadedText start="NFTs in Circulation" value={globalData?.circulation} />
-//             <TextInfo text="Mint curve progress" info="" />
-//             <MintGraph pos={globalData?.minted ?? 0} />
-//             <LoadedText start="Current Mint Price" text="&%%& $SPORE" value={globalData?.mintPrice} />
-//             <div className="flex items-center justify-center w-full">
-//               <BasicButton onClick={onMint} text="Mint" />
-//             </div>
-//           </div>
-//         </Window>
-//         <Window>
-//           <div className="w-full h-full flex flex-col justify-between gap-2">
-//             <LoadedText start="NFTs Staked" value={globalData?.staked} />
-//             <TextInfo text="Stake curve progress" info="" />
-//             <StakeGraph pos={globalData?.staked ?? 0} />
-//             <LoadedText start="Current Reward" text="&%%& / nft / day" value={globalData?.stakeReward} />
-//             {loadedNfts && nfts.length === 0 ?
-//               <div className="flex flex-col justify-center items-center gap-2">
-//                 <p className="w-full text-center underline">
-//                   {`You don't have any NFTs`}
-//                 </p>
-//                 <div className="flex flex-row justify-center items-center gap-2">
-//                   <MagicEdenLink />
-//                   <TensorLink />
-//                 </div>
-//               </div>
-//               :
-//               <div className="flex gap-4 overflow-x-auto">
-//                 {loadedNfts ?
-//                   nfts.map((nft, i) => <NFTWidget key={i} {...nft} onSelect={() => select(nft.mint)} />)
-//                   :
-//                   Array.from({ length: 4 }).map((_, i: number) =>
-//                     <div key={i} className="inline-block w-[240px]">
-//                       <SkeletonSquare key={i} />
-//                     </div>
-//                   )
-//                 }
-//               </div>
-//             }
-//             <div className="flex flex-row justify-center items-center w-full gap-2">
-//               <BasicButton onClick={onStake} text="Stake" />
-//               <BasicButton onClick={onUnstake} text="Unstake" />
-//             </div>
-//           </div>
-//         </Window>
-//       </div>
-//       <div className="flex flex-row justify-center items-center w-full">
-//         <div className="w-[800px]">
-//           <Window>
-//             <div className="flex flex-col justify-between items-center h-full w-full gap-2">
-//               <BigLoading amount={userData?.claimable} />
-//               <p className="italic text-center">{`Earning ${userData?.earning || "0"} $SPORE / day`}</p>
-//               <BasicButton onClick={onClaim} text="Claim" />
-//             </div>
-//           </Window>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// function TextInfo({ text, info }: { text: string, info: string; }) {
-//   return (
-//     <div className="flex flex-row gap-2 hover:scale-105 transition-all duration-200 text-xl">
-//       <p className="underline font-bold">{text}</p>
-//       <p>{info}</p>
-//     </div>
-//   );
-// }

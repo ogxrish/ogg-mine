@@ -14,23 +14,31 @@ export default function Countdown({ timeLeft }: { timeLeft: number; }) {
     const [seconds, setSeconds] = useState(0);
 
     useEffect(() => {
-        setSeconds(timeLeft);
-        const interval = setInterval(() => {
-            setSeconds(prev => {
-                if (prev <= 0) {
-                    clearInterval(interval);
-                    return 0;
-                } else {
-                    return prev - 1;
-                }
-            });
-        }, 1000);
+        let interval: any;
+        if (timeLeft < 0) {
+            setSeconds(Math.abs(timeLeft));
+            interval = setInterval(() => {
+                setSeconds(prev => prev + 1);
+            }, 1000);
+        } else {
+            setSeconds(timeLeft);
+            interval = setInterval(() => {
+                setSeconds(prev => {
+                    if (prev <= 0) {
+                        clearInterval(interval);
+                        return 0;
+                    } else {
+                        return prev - 1;
+                    }
+                });
+            }, 1000);
+        }
         return () => clearInterval(interval);
     }, [timeLeft]);
 
     return (
         <p className="text-2xl md:text-4xl font-extrabold text-center">
-            {`${formatSecondsToDHMS(seconds)} left`}
+            {`${formatSecondsToDHMS(seconds)}`}
         </p>
     );
 }
