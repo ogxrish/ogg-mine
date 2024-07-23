@@ -43,5 +43,6 @@ export default function WalletButton() {
     );
 }
 export function shortenAddress(address: string): string {
+    if (!address) return "So11...1111";
     return `${address.substring(0, 4)}...${address.substring(address.length - 4, address.length)}`;
 }

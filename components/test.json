@@ -1,5 +1,5 @@
 {
-  "address": "Cwjz97MhGiLSvKYxomtYkTEy3idYNwt7MbwcTt8UwpVp",
+  "address": "HgPsmViWDLp7FqoX2ickWB1oketd8rESrPV8suMsr5yH",
   "metadata": {
     "name": "test",
     "version": "0.1.0",
@@ -46,6 +46,32 @@
               {
                 "kind": "arg",
                 "path": "epoch"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mine_data",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  101,
+                  95,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
               }
             ]
           }
@@ -348,6 +374,32 @@
           }
         },
         {
+          "name": "mine_data",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  101,
+                  95,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
           "name": "epoch_account",
           "writable": true,
           "pda": {
@@ -476,6 +528,31 @@
           }
         },
         {
+          "name": "program_token_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -574,6 +651,19 @@
         84,
         5
       ]
+    },
+    {
+      "name": "MineData",
+      "discriminator": [
+        78,
+        32,
+        162,
+        28,
+        141,
+        181,
+        186,
+        185
+      ]
     }
   ],
   "errors": [
@@ -655,6 +745,26 @@
           },
           {
             "name": "epoch",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MineData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "claimed",
+            "type": "u64"
+          },
+          {
+            "name": "epochs",
+            "type": "u64"
+          },
+          {
+            "name": "missed",
             "type": "u64"
           }
         ]

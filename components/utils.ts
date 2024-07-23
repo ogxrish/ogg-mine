@@ -4,11 +4,21 @@ import { getAssociatedTokenAddressSync, getAccount } from "@solana/spl-token";
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 
 export const programId = new PublicKey(test.address);
-const mint: PublicKey = process.env.NEXT_PUBLIC_NETWORK == "devnet" ? new PublicKey("3iYbqxw7Swx2eKp9BSmNXAZUKbkzCp8gz6szy2xYoHWH") : new PublicKey("5gJg5ci3T7Kn5DLW4AQButdacHJtvADp7jJfNsLbRc1k");
+const mint: PublicKey = process.env.NEXT_PUBLIC_NETWORK == "devnet" ? new PublicKey("J43bGRufM646mhHgibfzdxPAZy6jLxx6ccK1ACuokqcT") : new PublicKey("2sP9bY51NdqHGtHQfRduxUTnuPvugPAoPqtfrBR2VRCL");
 function getProgram() {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     return new Program(test as any, provider) as any;
+}
+export async function getLeaderboard() {
+    const program = getProgram();
+    try {
+        const accounts = await program.account.mineData.all();
+        return accounts;
+    } catch (e) {
+        console.error(e);
+        return [];
+    }
 }
 export async function getGlobalAccount() {
     const program = getProgram();
@@ -94,6 +104,8 @@ export async function initialize(wallet: PublicKey) {
     }).transaction();
     const tx = new Transaction();
     tx.add(i1, i2);
+    tx.feePayer = wallet;
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
     await provider.sendAndConfirm(tx);
 }
 export async function fund(wallet: PublicKey, amount: number) {

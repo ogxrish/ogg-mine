@@ -27,16 +27,28 @@ export default function Admin() {
     }, []);
     const onInitialize = async () => {
         if (!publicKey) return;
-        await initialize(publicKey);
+        try {
+            await initialize(publicKey);
+        } catch (e) {
+            console.error(e);
+        }
     };
     const onNewEpoch = async () => {
         if (!publicKey || !globalAccount) return;
-        await newEpoch(publicKey, globalAccount.epoch.toNumber() + 1);
+        try {
+            await newEpoch(publicKey, globalAccount.epoch.toNumber() + 1);
+        } catch (e) {
+            console.error(e);
+        }
     };
     const onFund = async () => {
         if (!publicKey || !fundAmount) return;
-        await fund(publicKey, fundAmount);
-        setBalance(balance => balance + BigInt(fundAmount));
+        try {
+            await fund(publicKey, fundAmount);
+            setBalance(balance => balance + BigInt(fundAmount));
+        } catch (e) {
+            console.error(e);
+        }
     };
     return (
         <div className="flex flex-col justify-center items-center gap-2 mt-10">
@@ -48,6 +60,7 @@ export default function Admin() {
                 <p>Epoch: {globalAccount?.epoch.toNumber()}</p>
                 <p>Time till epoch end: {Math.floor(globalAccount?.epochEnd.toNumber() - Date.now() / 1000)} seconds</p>
                 <p>Program account balance: {balance.toString()}</p>
+                <p className="italic"> Fund amount</p>
                 <input
                     placeholder="Fund amount"
                     value={fundAmount}
