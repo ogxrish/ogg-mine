@@ -17,7 +17,7 @@ export default function Admin() {
         (async () => {
             const globalAccount: any = await getGlobalAccount();
             if (globalAccount) {
-                setInitialized(true);
+                setInitialized(true); //
                 let endTime = globalAccount.epochEnd.toNumber();
                 if (globalAccount.epoch.toNumber() === 0 || Date.now() / 1000 > endTime) {
                     setEpochOver(true);
