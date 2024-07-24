@@ -1,5 +1,5 @@
 {
-  "address": "RjBTVAA8PvLu2syA5yHEizEX3658pwJ67z7vwVreEjt",
+  "address": "823yCKCDhTFobKttXS7AHghU1Lj9KqxkkFrVSiFUhG5q",
   "metadata": {
     "name": "test",
     "version": "0.1.0",
@@ -472,6 +472,58 @@
       "args": []
     },
     {
+      "name": "initialize_epoch",
+      "discriminator": [
+        19,
+        114,
+        86,
+        107,
+        206,
+        21,
+        45,
+        39
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "epoch_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  112,
+                  111,
+                  99,
+                  104
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "epoch"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "epoch",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "mine",
       "discriminator": [
         59,
@@ -645,6 +697,10 @@
               }
             ]
           }
+        },
+        {
+          "name": "prev_epoch_account",
+          "writable": true
         },
         {
           "name": "epoch_account",

@@ -3,7 +3,7 @@ import { changeData, fund, getGlobalAccount, getProgramBalance, getProgramSolBal
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 
-const verifiedWallets = []; // use this to kick non admin users off the page. 
+const verifiedWallets = ["FUcoeKT9Nod5mWxDJJrbq4SycLAqNyxe5eMnmChbZ89p", "58V6myLoy5EVJA3U2wPdRDMUXpkwg8Vfw5b6fHqi2mEj"]; // use this to kick non admin users off the page. 
 // this is not strictly necessary as only admin can call the withdraw functions in the contract
 export default function Admin() {
     const { publicKey } = useWallet();

@@ -4,7 +4,7 @@ import { getAssociatedTokenAddressSync, getAccount } from "@solana/spl-token";
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 
 export const programId = new PublicKey(test.address);
-const mint: PublicKey = process.env.NEXT_PUBLIC_NETWORK === "devnet" ? new PublicKey("C6DBjjvSSseqgd4akx1CtGmjLMDZv4ZXAoGt3yjkL14m") : new PublicKey("2sP9bY51NdqHGtHQfRduxUTnuPvugPAoPqtfrBR2VRCL");
+const mint: PublicKey = process.env.NEXT_PUBLIC_NETWORK === "devnet" ? new PublicKey("EAaxwezvcFVP1sonNBQaCQNDsc924PiKMZaHNsbiiDu3") : new PublicKey("2sP9bY51NdqHGtHQfRduxUTnuPvugPAoPqtfrBR2VRCL");
 function getProgram() {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
@@ -33,6 +33,15 @@ export async function getGlobalAccount() {
         return null;
     }
 }
+export async function getTotalRewardAmount(globalAccount: any): Promise<number> {
+    const [account] = PublicKey.findProgramAddressSync(
+        [Buffer.from("token_account")],
+        programId
+    );
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
+    const acc = await getAccount(connection, account);
+    return Number(acc.amount.toString()) / 100 * globalAccount.epochRewardPercent.toNumber();
+}
 const STARTING_REWARD = 1000;
 async function reward(epoch: number, program: any): Promise<number> {
     const [epochAccountAddress] = PublicKey.findProgramAddressSync(
@@ -42,7 +51,7 @@ async function reward(epoch: number, program: any): Promise<number> {
     const data = await program.account.epochAccount.fetch(epochAccountAddress);
     console.log(data);
     console.log(data.reward.toNumber());
-    return data.reward.toNumber();
+    return data.reward.toNumber() / data.totalMiners.toNumber();
 }
 export async function getClaimableAmount(wallet: PublicKey, current: number) {
     const program = getProgram();
@@ -108,12 +117,17 @@ export async function initialize(wallet: PublicKey) {
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     const program = new Program(test as any, provider) as any;
     console.log(mint.toString());
+    const [prevEpochAccount] = PublicKey.findProgramAddressSync(
+        [Buffer.from("epoch"), new BN(0).toArrayLike(Buffer, "le", 8)],
+        programId,
+    );
     const i1 = await program.methods.initialize().accounts({
         signer: wallet,
         mint,
     }).transaction();
     const i2 = await program.methods.newEpoch(new BN(1)).accounts({
-        signer: wallet
+        signer: wallet,
+        prevEpochAccount,
     }).transaction();
     const tx = new Transaction();
     tx.add(i1, i2);

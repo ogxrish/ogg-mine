@@ -6,10 +6,11 @@ import TransactionPending from "@/components/TransactionPending";
 import TransactionFailure from "@/components/TransactionFailure";
 import TransactionSuccess from "@/components/TransactionSuccess";
 import WalletButton from "@/components/WalletButton";
-import { calculateMiningPrice, claim, getClaimableAmount, getEpochAccount, getGlobalAccount, getLeaderboard, isUserMining, mine, newEpoch, toHexString } from "@/components/utils";
+import { calculateMiningPrice, claim, getClaimableAmount, getEpochAccount, getGlobalAccount, getLeaderboard, getTotalRewardAmount, isUserMining, mine, newEpoch, toHexString } from "@/components/utils";
 import LoadedText from "@/components/LoadedText";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
+import { useRouter } from "next/router";
 
 type GlobalAccount = {
   miners: number,
@@ -26,12 +27,13 @@ type LeaderboardEntry = {
 };
 export default function Home() {
   const { publicKey } = useWallet();
+  const router = useRouter();
   const [succeededTransaction, setSucceededTransaction] = useState<boolean>(false);
   const [failedTransaction, setFailedTransaction] = useState<boolean>(false);
   const [sendingTransaction, setSendingTransaction] = useState<boolean>(false);
   const [globalAccount, setGlobalAccount] = useState<GlobalAccount>();
   const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [state, setState] = useState<number>(0);
+  const [state, setState] = useState<number | undefined>(undefined);
   const [miningCost, setMiningCost] = useState<number>();
   const [isMining, setIsMining] = useState<boolean>(false);
   const [claimable, setClaimable] = useState<number>(0);
@@ -47,25 +49,39 @@ export default function Home() {
           miners: epochAccount.totalMiners.toNumber(),
           epochEnd: globalAccount.epochEnd.toNumber(),
           epoch: globalAccount.epoch.toNumber(),
-          reward: globalAccount.reward.toNumber(),
+          reward: await getTotalRewardAmount(globalAccount),
           epochLength: globalAccount.epochLength.toNumber(),
           epochRewardPercent: globalAccount.epochRewardPercent.toNumber()
         });
         setMiningCost(calculateMiningPrice(epochAccount.totalMiners.toNumber()));
         getLeaderboard().then((leaderboard: any[]) => {
-
           const l = leaderboard.sort((a, b) => b.account.claimed.cmp(a.account.claimed)).slice(0, 15);
           setLeaderboard(l.map((item: any) => {
             return {
               owner: item.account.owner,
               claimed: item.account.claimed.toString(10),
-              epochs: item.account.claimed.toString(10),
+              epochs: item.account.epochs.toString(10),
             };
           }));
         });
       }
     })();
   }, []);
+  useEffect(() => {
+    if (router && router.isReady) {
+      const { state } = router.query;
+      if (state && !Number.isNaN(Number(state))) {
+        console.log(state);
+        setState(Number(state));
+      }
+    }
+  }, [router, router.isReady]);
+  useEffect(() => {
+    if (state === undefined) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set('state', state.toString());
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  }, [state]);
   useEffect(() => {
     if (!publicKey || !globalAccount) return;
     (async () => {
