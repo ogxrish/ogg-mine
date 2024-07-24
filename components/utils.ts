@@ -4,7 +4,7 @@ import { getAssociatedTokenAddressSync, getAccount } from "@solana/spl-token";
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 
 export const programId = new PublicKey(test.address);
-const mint: PublicKey = process.env.NEXT_PUBLIC_NETWORK == "devnet" ? new PublicKey("J43bGRufM646mhHgibfzdxPAZy6jLxx6ccK1ACuokqcT") : new PublicKey("2sP9bY51NdqHGtHQfRduxUTnuPvugPAoPqtfrBR2VRCL");
+const mint: PublicKey = process.env.NEXT_PUBLIC_NETWORK === "devnet" ? new PublicKey("C6DBjjvSSseqgd4akx1CtGmjLMDZv4ZXAoGt3yjkL14m") : new PublicKey("2sP9bY51NdqHGtHQfRduxUTnuPvugPAoPqtfrBR2VRCL");
 function getProgram() {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
@@ -34,12 +34,15 @@ export async function getGlobalAccount() {
     }
 }
 const STARTING_REWARD = 1000;
-function reward(epoch: number): number {
-    let result = STARTING_REWARD;
-    for (let i = 0; i < epoch; i++) {
-        result = result * 7 / 8;
-    }
-    return result;
+async function reward(epoch: number, program: any): Promise<number> {
+    const [epochAccountAddress] = PublicKey.findProgramAddressSync(
+        [Buffer.from("epoch"), new BN(epoch).toArrayLike(Buffer, "le", 8)],
+        programId,
+    );
+    const data = await program.account.epochAccount.fetch(epochAccountAddress);
+    console.log(data);
+    console.log(data.reward.toNumber());
+    return data.reward.toNumber();
 }
 export async function getClaimableAmount(wallet: PublicKey, current: number) {
     const program = getProgram();
@@ -51,11 +54,13 @@ export async function getClaimableAmount(wallet: PublicKey, current: number) {
             }
         }
     ]);
-    return Math.round(accounts.reduce((prev, account) => {
-        if (account.account.epoch.toNumber() === current) return 0;
-        const amount = reward(account.account.epoch);
-        return prev + amount;
-    }, 0) * 1000) / 1000;
+    let total = 0;
+    for (const account of accounts) {
+        if (account.account.epoch.toNumber() === current) continue;
+        const amount = await reward(account.account.epoch, program);
+        total += amount;
+    }
+    return total;
 }
 export async function getEpochAccount(epoch: number) {
     const program = getProgram();
@@ -163,6 +168,7 @@ export async function claim(wallet: PublicKey, current: number) {
             const ix = await program.methods.claim(accounts[ii].account.epoch).accounts({
                 signer: wallet,
                 signerTokenAccount,
+                mint,
             }).transaction();
             tx.add(ix);
         }
@@ -174,5 +180,5 @@ export function toHexString(number: number) {
 }
 
 export function calculateMiningPrice(miners: number) {
-    return (LAMPORTS_PER_SOL / 10 / 2000 * miners ** 2) / LAMPORTS_PER_SOL;
+    return (LAMPORTS_PER_SOL * 0.005 * miners ** 2) / LAMPORTS_PER_SOL;
 }

@@ -1,5 +1,5 @@
 {
-  "address": "HgPsmViWDLp7FqoX2ickWB1oketd8rESrPV8suMsr5yH",
+  "address": "RjBTVAA8PvLu2syA5yHEizEX3658pwJ67z7vwVreEjt",
   "metadata": {
     "name": "test",
     "version": "0.1.0",
@@ -7,6 +7,54 @@
     "description": "Created with Anchor"
   },
   "instructions": [
+    {
+      "name": "change_global_parameters",
+      "discriminator": [
+        36,
+        164,
+        96,
+        49,
+        95,
+        143,
+        216,
+        172
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "global_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "epoch_reward_percent",
+          "type": "u64"
+        },
+        {
+          "name": "epoch_length",
+          "type": "u64"
+        }
+      ]
+    },
     {
       "name": "claim",
       "discriminator": [
@@ -24,6 +72,9 @@
           "name": "signer",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "mint"
         },
         {
           "name": "mine_account",
@@ -78,7 +129,93 @@
         },
         {
           "name": "signer_token_account",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "signer"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
         },
         {
           "name": "program_token_account",
@@ -168,6 +305,10 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         }
       ],
       "args": [
@@ -610,6 +751,85 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "withdraw_program_token",
+      "discriminator": [
+        106,
+        235,
+        31,
+        199,
+        250,
+        187,
+        201,
+        19
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "signer_token_account",
+          "writable": true
+        },
+        {
+          "name": "program_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -730,6 +950,14 @@
           {
             "name": "reward",
             "type": "u64"
+          },
+          {
+            "name": "epoch_length",
+            "type": "u64"
+          },
+          {
+            "name": "epoch_reward_percent",
+            "type": "u64"
           }
         ]
       }
@@ -766,6 +994,10 @@
           {
             "name": "missed",
             "type": "u64"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
           }
         ]
       }

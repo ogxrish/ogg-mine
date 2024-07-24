@@ -9,7 +9,6 @@ import WalletButton from "@/components/WalletButton";
 import { calculateMiningPrice, claim, getClaimableAmount, getEpochAccount, getGlobalAccount, getLeaderboard, isUserMining, mine, newEpoch, toHexString } from "@/components/utils";
 import LoadedText from "@/components/LoadedText";
 import Countdown from "@/components/Countdown";
-import { BN } from "@coral-xyz/anchor";
 import LeaderboardRow from "@/components/LeaderboardRow";
 
 type GlobalAccount = {
@@ -17,6 +16,8 @@ type GlobalAccount = {
   epochEnd: number,
   epoch: number,
   reward: number,
+  epochLength: number;
+  epochRewardPercent: number;
 };
 type LeaderboardEntry = {
   owner: string;
@@ -47,8 +48,9 @@ export default function Home() {
           epochEnd: globalAccount.epochEnd.toNumber(),
           epoch: globalAccount.epoch.toNumber(),
           reward: globalAccount.reward.toNumber(),
+          epochLength: globalAccount.epochLength.toNumber(),
+          epochRewardPercent: globalAccount.epochRewardPercent.toNumber()
         });
-        console.log(globalAccount.reward.toNumber());
         setMiningCost(calculateMiningPrice(epochAccount.totalMiners.toNumber()));
         getLeaderboard().then((leaderboard: any[]) => {
 
@@ -84,12 +86,14 @@ export default function Home() {
       await mine(publicKey, globalAccount.epoch, timeLeft);
       if (timeLeft < 0) {
         setTimeLeft(86400);
-        setGlobalAccount(globalAccount => {
+        setGlobalAccount((globalAccount: any) => {
           return {
             miners: 1,
             epochEnd: Date.now() + 86400,
-            epoch: globalAccount!.epoch + 1,
-            reward: globalAccount!.reward * 7 / 8
+            epoch: globalAccount.epoch + 1,
+            reward: globalAccount.reward,
+            epochLength: globalAccount.epochLength,
+            epochRewardPercent: globalAccount.epochRewardPercent,
           };
         });
         setMiningCost(calculateMiningPrice(1));
@@ -162,18 +166,17 @@ export default function Home() {
         <BasicButton onClick={() => setState(1)} text="Claim" disabled={state === 1} />
         <BasicButton onClick={() => setState(2)} text="Leaderboard" disabled={state === 2} />
       </div>
-      <div className="w-full h-full">
+      <div className="w-full h-full flex justify-center items-center">
         <Window>
           <div className="w-full h-full flex flex-col justify-center items-center gap-3 md:gap-6">
-
             {state == 0 ?
               <>
                 <div className="flex flex-col justify-center items-center gap-1 md:gap-2 mb-4 md:mb-6 lg:mb-10">
                   <p className="uppercase text-4xl lg:text-6xl font-extrabold">MINE</p>
                   <p className="text-xs md:text-sm lg:text-base font-extrabold">{`EPOCH 0x${toHexString(globalAccount?.epoch || 0)}`}</p>
                 </div>
-                <LoadedText start="Miners " value={globalAccount?.miners} />
-                <LoadedText start="Mining Reward" text="&%%& $SPORE" value={globalAccount?.reward} />
+                <LoadedText start="Miners" value={globalAccount?.miners} />
+                <LoadedText start="Epoch Reward" text="&%%& $OGG" value={globalAccount?.reward} />
                 <LoadedText start="Mining Cost" text="&%%& SOL" value={miningCost} />
                 <div className="flex flex-col justify-center items-center gap-1 md:gap-2">
                   {timeLeft < 0 ?

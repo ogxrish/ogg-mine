@@ -12,11 +12,12 @@ function formatSecondsToDHMS(seconds: number) {
 }
 export default function Countdown({ timeLeft }: { timeLeft: number; }) {
     const [seconds, setSeconds] = useState(0);
-
+    const [negative, setNegative] = useState<boolean>(false);
     useEffect(() => {
         let interval: any;
         if (timeLeft < 0) {
             setSeconds(Math.abs(timeLeft));
+            setNegative(true);
             interval = setInterval(() => {
                 setSeconds(prev => prev + 1);
             }, 1000);
@@ -35,10 +36,17 @@ export default function Countdown({ timeLeft }: { timeLeft: number; }) {
         }
         return () => clearInterval(interval);
     }, [timeLeft]);
-
-    return (
-        <p className="text-2xl md:text-4xl font-extrabold text-center">
-            {`${formatSecondsToDHMS(seconds)}`}
-        </p>
-    );
+    if (negative) {
+        return (
+            <p className="text-2xl md:text-4xl font-extrabold text-center text-red-500">
+                {`-${formatSecondsToDHMS(seconds)}`}
+            </p>
+        );
+    } else {
+        return (
+            <p className="text-2xl md:text-4xl font-extrabold text-center">
+                {`${formatSecondsToDHMS(seconds)}`}
+            </p>
+        );
+    }
 }
