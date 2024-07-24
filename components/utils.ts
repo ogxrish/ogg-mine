@@ -81,6 +81,14 @@ export async function getProgramBalance() {
     const acc = await getAccount(connection, account);
     return acc.amount;
 }
+export async function getProgramSolBalance() {
+    const [account] = PublicKey.findProgramAddressSync(
+        [Buffer.from("auth")],
+        programId,
+    );
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
+    return await connection.getBalance(account) / LAMPORTS_PER_SOL;
+}
 export async function isUserMining(wallet: PublicKey, epoch: number): Promise<boolean> {
     try {
         const program = getProgram();
