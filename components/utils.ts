@@ -183,6 +183,12 @@ export async function claim(wallet: PublicKey, current: number) {
         await provider.sendAndConfirm(tx);
     }
 }
+export async function changeData(wallet: PublicKey, epochRewardPercent: number, epochLength: number) {
+    const program = getProgram();
+    await program.methods.changeGlobalParameters(new BN(epochRewardPercent), new BN(epochLength)).accounts({
+        signer: wallet
+    }).rpc();
+}
 export function toHexString(number: number) {
     return number.toString(16);
 }

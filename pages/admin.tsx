@@ -1,5 +1,5 @@
 import BasicButton from "@/components/BasicButton";
-import { fund, getGlobalAccount, getProgramBalance, getProgramSolBalance, initialize, newEpoch } from "@/components/utils";
+import { changeData, fund, getGlobalAccount, getProgramBalance, getProgramSolBalance, initialize, newEpoch } from "@/components/utils";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 
@@ -13,6 +13,8 @@ export default function Admin() {
     const [balance, setBalance] = useState<bigint>(BigInt(0));
     const [solBalance, setSolBalance] = useState<any>(0);
     const [globalAccount, setGlobalAccount] = useState<any>();
+    const [epochLength, setEpochLength] = useState<number>(0);
+    const [epochRewardPercent, setEpochRewardPercent] = useState<number>(0);
     useEffect(() => {
         (async () => {
             const globalAccount: any = await getGlobalAccount();
@@ -22,6 +24,8 @@ export default function Admin() {
                 if (globalAccount.epoch.toNumber() === 0 || Date.now() / 1000 > endTime) {
                     setEpochOver(true);
                 }
+                setEpochLength(globalAccount.epochLength);
+                setEpochRewardPercent(globalAccount.epochRewardPercent);
                 setGlobalAccount(globalAccount);
                 getProgramBalance().then((amount) => setBalance(amount));
                 getProgramSolBalance().then((balance) => setSolBalance(balance));
@@ -53,6 +57,14 @@ export default function Admin() {
             console.error(e);
         }
     };
+    const onUpdate = async () => {
+        if (!publicKey) return;
+        try {
+            await changeData(publicKey, epochRewardPercent, epochLength);
+        } catch (e) {
+            console.error(e);
+        }
+    };
     return (
         <div className="flex flex-col justify-center items-center gap-2 mt-10">
             <div className="flex flex-row justify-center items-center gap-2">
@@ -76,6 +88,31 @@ export default function Admin() {
                         className="bg-transparent"
                     />
                     <BasicButton onClick={onFund} text="Fund" />
+                </div>
+                <div className="flex flex-col justify-center items-center gap-2">
+                    <div className="flex flex-row justify-center items-center gap-4">
+                        <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
+                            <p>Epoch length in seconds</p>
+                            <input
+                                placeholder="Epoch Length"
+                                value={epochLength}
+                                type="number"
+                                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEpochLength(Number(event.target.value))}
+                                className="bg-transparent"
+                            />
+                        </div>
+                        <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
+                            <p>Epoch reward percent</p>
+                            <input
+                                placeholder="Fund amount"
+                                value={epochRewardPercent}
+                                type="number"
+                                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEpochRewardPercent(Number(event.target.value))}
+                                className="bg-transparent"
+                            />
+                        </div>
+                    </div>
+                    <BasicButton onClick={onUpdate} text="Change Data" />
                 </div>
             </div>
         </div>

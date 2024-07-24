@@ -54,7 +54,7 @@ export default function Home() {
         setMiningCost(calculateMiningPrice(epochAccount.totalMiners.toNumber()));
         getLeaderboard().then((leaderboard: any[]) => {
 
-          const l = leaderboard.sort((a, b) => a.account.claimed.cmp(b.account.claimed)).slice(0, 15);
+          const l = leaderboard.sort((a, b) => b.account.claimed.cmp(a.account.claimed)).slice(0, 15);
           setLeaderboard(l.map((item: any) => {
             return {
               owner: item.account.owner,
@@ -191,7 +191,7 @@ export default function Home() {
               state === 1 ?
                 <>
                   <p className="uppercase text-4xl lg:text-6xl font-extrabold mb-10">CLAIM</p>
-                  <p className="text-4xl font-bold">{`${claimable} $SPORE`}</p>
+                  <p className="text-4xl font-bold">{`${claimable} $OGG`}</p>
                   <BasicButton onClick={onClaim} text="Claim" />
                 </>
                 :
