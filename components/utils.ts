@@ -151,8 +151,13 @@ export async function withdraw(wallet: PublicKey, amount: number) {
 }
 export async function newEpoch(wallet: PublicKey, epoch: number) {
     const program = getProgram();
+    const [prevEpochAccount] = PublicKey.findProgramAddressSync(
+        [Buffer.from("epoch"), new BN(epoch - 1).toArrayLike(Buffer, "le", 8)],
+        programId
+    );
     await program.methods.newEpoch(new BN(epoch)).accounts({
         signer: wallet,
+        prevEpochAccount
     }).rpc();
 }
 export async function mine(wallet: PublicKey, epoch: number, timeLeft: number) {
@@ -160,7 +165,11 @@ export async function mine(wallet: PublicKey, epoch: number, timeLeft: number) {
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     const program = new Program(test as any, provider) as any;
     if (timeLeft < 0) {
-        const i1 = await program.methods.newEpoch(new BN(epoch + 1)).accounts({ signer: wallet }).transaction();
+        const [prevEpochAccount] = PublicKey.findProgramAddressSync(
+            [Buffer.from("epoch"), new BN(epoch).toArrayLike(Buffer, "le", 8)],
+            programId
+        );
+        const i1 = await program.methods.newEpoch(new BN(epoch + 1)).accounts({ signer: wallet, prevEpochAccount }).transaction();
         const i2 = await program.methods.mine(new BN(epoch + 1)).accounts({ signer: wallet }).transaction();
         const transaction = new Transaction().add(i1, i2);
         await provider.sendAndConfirm(transaction);
