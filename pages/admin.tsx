@@ -68,7 +68,7 @@ export default function Admin() {
         }
     };
     return (
-        <div className="flex flex-col justify-center items-center gap-2 mt-10">
+        <div className="flex flex-col justify-center items-center gap-2 mt-10 bg-black p-8 border border-yellow-500 rounded-lg">
             <div className="flex flex-row justify-center items-center gap-2">
                 <BasicButton text="Initialize" onClick={onInitialize} disabled={initialized} />
                 <BasicButton text="New Epoch" onClick={onNewEpoch} disabled={!epochOver} />

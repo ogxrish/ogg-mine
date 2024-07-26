@@ -27,14 +27,11 @@ export default function WalletButton() {
             </div>
             <button className="hover:opacity-80" onClick={action} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                 <div className=" items-center flex gap-2 p-1 pl-3">
-                    <div className="text-xs md:text-base shadow-inner shadow-gray-100 flex items-center border px-6 py-4 gap-2 border-white">
-                        <img
-                            src="/wallet.png"
-                            alt=""
-                            className="!opacity-100"
-                            width={24}
-                            height={24}
-                        />
+                    <div className="text-xs md:text-base shadow-inner shadow-yellow-300 flex items-center border px-6 py-4 gap-2 border-yellow-500 text-yellow-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3" />
+                        </svg>
+
                         {connected ? `${hover ? "Disconnect" : shortenAddress(publicKey?.toString() || "")}` : "Connect Wallet"}
                     </div>
                 </div>
