@@ -53,7 +53,7 @@ export default function Home() {
           epochLength: globalAccount.epochLength.toNumber(),
           epochRewardPercent: globalAccount.epochRewardPercent.toNumber()
         });
-        setMiningCost(calculateMiningPrice(epochAccount.totalMiners.toNumber()));
+        setMiningCost(calculateMiningPrice(epochAccount.totalMiners.toNumber(), globalAccount));
         getLeaderboard().then((leaderboard: any[]) => {
           const l = leaderboard.sort((a, b) => b.account.claimed.cmp(a.account.claimed)).slice(0, 15);
           setLeaderboard(l.map((item: any) => {
@@ -112,7 +112,7 @@ export default function Home() {
             epochRewardPercent: globalAccount.epochRewardPercent,
           };
         });
-        setMiningCost(calculateMiningPrice(1));
+        setMiningCost(calculateMiningPrice(1, globalAccount));
       } else {
         setGlobalAccount((globalAccount: any) => {
           return {
@@ -120,7 +120,7 @@ export default function Home() {
             miners: globalAccount.miners + 1
           };
         });
-        setMiningCost(calculateMiningPrice(globalAccount.miners + 1));
+        setMiningCost(calculateMiningPrice(globalAccount.miners + 1, globalAccount));
       }
       setIsMining(true);
       setSucceededTransaction(true);

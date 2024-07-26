@@ -15,6 +15,7 @@ export default function Admin() {
     const [globalAccount, setGlobalAccount] = useState<any>();
     const [epochLength, setEpochLength] = useState<number>(0);
     const [epochRewardPercent, setEpochRewardPercent] = useState<number>(0);
+    const [feeAmount, setFeeAmount] = useState<number>(0);
     useEffect(() => {
         (async () => {
             const globalAccount: any = await getGlobalAccount();
@@ -26,6 +27,7 @@ export default function Admin() {
                 }
                 setEpochLength(globalAccount.epochLength);
                 setEpochRewardPercent(globalAccount.epochRewardPercent);
+                setFeeAmount(globalAccount.feeLamports);
                 setGlobalAccount(globalAccount);
                 getProgramBalance().then((amount) => setBalance(amount));
                 getProgramSolBalance().then((balance) => setSolBalance(balance));
@@ -60,7 +62,7 @@ export default function Admin() {
     const onUpdate = async () => {
         if (!publicKey) return;
         try {
-            await changeData(publicKey, epochRewardPercent, epochLength);
+            await changeData(publicKey, epochRewardPercent, epochLength, feeAmount);
         } catch (e) {
             console.error(e);
         }
@@ -104,10 +106,20 @@ export default function Admin() {
                         <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
                             <p>Epoch reward percent</p>
                             <input
-                                placeholder="Fund amount"
+                                placeholder="Epoch reward percent"
                                 value={epochRewardPercent}
                                 type="number"
                                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEpochRewardPercent(Number(event.target.value))}
+                                className="bg-transparent"
+                            />
+                        </div>
+                        <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
+                            <p>Fee Amount</p>
+                            <input
+                                placeholder="Fee amount"
+                                value={feeAmount}
+                                type="number"
+                                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setFeeAmount(Number(event.target.value))}
                                 className="bg-transparent"
                             />
                         </div>

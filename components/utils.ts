@@ -206,9 +206,9 @@ export async function claim(wallet: PublicKey, current: number) {
         await provider.sendAndConfirm(tx);
     }
 }
-export async function changeData(wallet: PublicKey, epochRewardPercent: number, epochLength: number) {
+export async function changeData(wallet: PublicKey, epochRewardPercent: number, epochLength: number, feeAmount: number) {
     const program = getProgram();
-    await program.methods.changeGlobalParameters(new BN(epochRewardPercent), new BN(epochLength)).accounts({
+    await program.methods.changeGlobalParameters(new BN(epochRewardPercent), new BN(epochLength), new BN(feeAmount)).accounts({
         signer: wallet
     }).rpc();
 }
@@ -216,6 +216,6 @@ export function toHexString(number: number) {
     return number.toString(16);
 }
 
-export function calculateMiningPrice(miners: number) {
-    return (LAMPORTS_PER_SOL * 0.005 * miners ** 2) / LAMPORTS_PER_SOL;
+export function calculateMiningPrice(miners: number, globalAccount: any) {
+    return (globalAccount.feeLamports * miners ** 2) / LAMPORTS_PER_SOL;
 }
