@@ -16,6 +16,7 @@ export default function Admin() {
     const [epochLength, setEpochLength] = useState<number>(0);
     const [epochRewardPercent, setEpochRewardPercent] = useState<number>(0);
     const [feeAmount, setFeeAmount] = useState<number>(0);
+    const [display, setDisplay] = useState<boolean>(false);
     useEffect(() => {
         (async () => {
             const globalAccount: any = await getGlobalAccount();
@@ -34,6 +35,13 @@ export default function Admin() {
             }
         })();
     }, []);
+    useEffect(() => {
+        if (!publicKey || !verifiedWallets.some(v => v == publicKey.toString())) {
+            setDisplay(false);
+        } else {
+            setDisplay(true);
+        }
+    }, [publicKey]);
     const onInitialize = async () => {
         if (!publicKey) return;
         try {
@@ -67,66 +75,70 @@ export default function Admin() {
             console.error(e);
         }
     };
-    return (
-        <div className="flex flex-col justify-center items-center gap-2 mt-10 bg-black p-8 border border-yellow-500 rounded-lg">
-            <div className="flex flex-row justify-center items-center gap-2">
-                <BasicButton text="Initialize" onClick={onInitialize} disabled={initialized} />
-                <BasicButton text="New Epoch" onClick={onNewEpoch} disabled={!epochOver} />
-            </div>
-            <div className="flex flex-col justify-center items-center gap-2">
-                <p>Epoch: {globalAccount?.epoch.toNumber()}</p>
-                <p>Epoch Reward Percent: {globalAccount?.epochRewardPercent.toNumber()}</p>
-                <p>Epoch Length (secs): {globalAccount?.epochLength.toNumber()}</p>
-                <p>Time till epoch end: {Math.floor(globalAccount?.epochEnd.toNumber() - Date.now() / 1000)} seconds {`${Math.floor(globalAccount?.epochEnd.toNumber() - Date.now() / 1000) < 0 ? "(Epoch is over...)" : ""}`}</p>
-                <p>Current program $OGG balance: {balance.toString()}</p>
-                <p>Current program $SOL balance: {solBalance.toString()}</p>
-                <div className="flex flex-col justify-center items-center gap-2 border border-white rounded-lg p-4">
-                    <p className="italic"> Fund amount</p>
-                    <input
-                        placeholder="Fund amount"
-                        value={fundAmount}
-                        type="number"
-                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => setFundAmount(Number(event.target.value))}
-                        className="bg-transparent"
-                    />
-                    <BasicButton onClick={onFund} text="Fund" />
+    if (!display) {
+        return <></>;
+    } else {
+        return (
+            <div className="flex flex-col justify-center items-center gap-2 mt-10 bg-black p-8 border border-yellow-500 rounded-lg">
+                <div className="flex flex-row justify-center items-center gap-2">
+                    <BasicButton text="Initialize" onClick={onInitialize} disabled={initialized} />
+                    <BasicButton text="New Epoch" onClick={onNewEpoch} disabled={!epochOver} />
                 </div>
                 <div className="flex flex-col justify-center items-center gap-2">
-                    <div className="flex flex-row justify-center items-center gap-4">
-                        <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
-                            <p>Epoch length in seconds</p>
-                            <input
-                                placeholder="Epoch Length"
-                                value={epochLength}
-                                type="number"
-                                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEpochLength(Number(event.target.value))}
-                                className="bg-transparent"
-                            />
-                        </div>
-                        <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
-                            <p>Epoch reward percent</p>
-                            <input
-                                placeholder="Epoch reward percent"
-                                value={epochRewardPercent}
-                                type="number"
-                                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEpochRewardPercent(Number(event.target.value))}
-                                className="bg-transparent"
-                            />
-                        </div>
-                        <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
-                            <p>Fee Amount</p>
-                            <input
-                                placeholder="Fee amount"
-                                value={feeAmount}
-                                type="number"
-                                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setFeeAmount(Number(event.target.value))}
-                                className="bg-transparent"
-                            />
-                        </div>
+                    <p>Epoch: {globalAccount?.epoch.toNumber()}</p>
+                    <p>Epoch Reward Percent: {globalAccount?.epochRewardPercent.toNumber()}</p>
+                    <p>Epoch Length (secs): {globalAccount?.epochLength.toNumber()}</p>
+                    <p>Time till epoch end: {Math.floor(globalAccount?.epochEnd.toNumber() - Date.now() / 1000)} seconds {`${Math.floor(globalAccount?.epochEnd.toNumber() - Date.now() / 1000) < 0 ? "(Epoch is over...)" : ""}`}</p>
+                    <p>Current program $OGG balance: {balance.toString()}</p>
+                    <p>Current program $SOL balance: {solBalance.toString()}</p>
+                    <div className="flex flex-col justify-center items-center gap-2 border border-white rounded-lg p-4">
+                        <p className="italic"> Fund amount</p>
+                        <input
+                            placeholder="Fund amount"
+                            value={fundAmount}
+                            type="number"
+                            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setFundAmount(Number(event.target.value))}
+                            className="bg-transparent"
+                        />
+                        <BasicButton onClick={onFund} text="Fund" />
                     </div>
-                    <BasicButton onClick={onUpdate} text="Change Data" />
+                    <div className="flex flex-col justify-center items-center gap-2">
+                        <div className="flex flex-row justify-center items-center gap-4">
+                            <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
+                                <p>Epoch length in seconds</p>
+                                <input
+                                    placeholder="Epoch Length"
+                                    value={epochLength}
+                                    type="number"
+                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEpochLength(Number(event.target.value))}
+                                    className="bg-transparent"
+                                />
+                            </div>
+                            <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
+                                <p>Epoch reward percent</p>
+                                <input
+                                    placeholder="Epoch reward percent"
+                                    value={epochRewardPercent}
+                                    type="number"
+                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEpochRewardPercent(Number(event.target.value))}
+                                    className="bg-transparent"
+                                />
+                            </div>
+                            <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
+                                <p>Fee Amount</p>
+                                <input
+                                    placeholder="Fee amount"
+                                    value={feeAmount}
+                                    type="number"
+                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setFeeAmount(Number(event.target.value))}
+                                    className="bg-transparent"
+                                />
+                            </div>
+                        </div>
+                        <BasicButton onClick={onUpdate} text="Change Data" />
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
 }

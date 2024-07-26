@@ -100,6 +100,7 @@ export default function Home() {
   const onMine = async () => {
     if (!publicKey || !globalAccount) return;
     try {
+      setSendingTransaction(true);
       await mine(publicKey, globalAccount.epoch, timeLeft);
       if (timeLeft < 0) {
         setTimeLeft(86400);
@@ -139,6 +140,7 @@ export default function Home() {
   const onClaim = async () => {
     if (!publicKey || !globalAccount) return;
     try {
+      setSendingTransaction(true);
       await claim(publicKey, globalAccount.epoch);
       setClaimable(0);
       setSucceededTransaction(true);

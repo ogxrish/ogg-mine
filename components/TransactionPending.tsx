@@ -3,7 +3,7 @@
 
 export default function TransactionPending() {
   return (
-    <div className="flex flex-row justify-center items-center gap-4 border-white border-2 rounded-lg px-6 py-8">
+    <div className="flex flex-row justify-center items-center gap-4 border-yellow-500 text-yellow-500 border-2 rounded-lg px-6 py-8 bg-black">
       <SpinningLoader />
       <p>Sending Transaction...</p>
     </div>
