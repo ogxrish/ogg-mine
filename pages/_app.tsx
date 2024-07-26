@@ -13,7 +13,7 @@ export default function App({ Component, pageProps }: AppProps) {
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={[]} autoConnect={true}>
         <WalletModalProvider>
-          <div className="flex flex-col justify-start items-center w-full h-screen bg-cover" style={{ backgroundImage: `url("/giphy3.gif")` }}>
+          <div className="flex flex-col justify-start items-center w-full h-screen " style={{ backgroundImage: `url("/coin-spin-slow.gif")`, backgroundSize: "5%" }}>
             <NavBar />
             <Component {...pageProps} />
           </div>

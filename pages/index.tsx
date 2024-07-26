@@ -11,6 +11,7 @@ import LoadedText from "@/components/LoadedText";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
 import { useRouter } from "next/router";
+import GradientBorder from "@/components/GradientBorder";
 
 type GlobalAccount = {
   miners: number,
@@ -183,7 +184,7 @@ export default function Home() {
         <BasicButton onClick={() => setState(2)} text="Leaderboard" disabled={state === 2} />
       </div>
       <div className="w-full h-full flex justify-center items-center">
-        <Window>
+        <GradientBorder>
           <div className="w-full h-full flex flex-col justify-center items-center gap-3 md:gap-6">
             {state == 0 ?
               <>
@@ -223,7 +224,7 @@ export default function Home() {
             }
             <Countdown timeLeft={timeLeft} />
           </div>
-        </Window>
+        </GradientBorder>
       </div>
     </div>
   );
