@@ -1,5 +1,5 @@
 {
-  "address": "823yCKCDhTFobKttXS7AHghU1Lj9KqxkkFrVSiFUhG5q",
+  "address": "6YVNXrYevrCN6VQgDzx5dWY9eJizBW9hSmts62YhbziH",
   "metadata": {
     "name": "test",
     "version": "0.1.0",
@@ -51,6 +51,10 @@
         },
         {
           "name": "epoch_length",
+          "type": "u64"
+        },
+        {
+          "name": "fee_lamports",
           "type": "u64"
         }
       ]
@@ -1013,6 +1017,10 @@
           },
           {
             "name": "epoch_reward_percent",
+            "type": "u64"
+          },
+          {
+            "name": "fee_lamports",
             "type": "u64"
           }
         ]
