@@ -6,7 +6,7 @@ export default function NavBar() {
         <div className="flex flex-row justify-between text-xs md:text-base items-center w-full border-b-4 border-yellow-500 bg-black p-4">
             <div>
                 {/* LOGO */}
-                <p className="text-lg">Realm of ogs</p>
+                <p className="text-lg">Realm of OGs</p>
             </div>
             <div></div>
             <div className="flex flex-row justify-center items-center md:gap-2">
