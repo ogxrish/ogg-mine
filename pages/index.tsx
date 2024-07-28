@@ -20,6 +20,7 @@ type GlobalAccount = {
   reward: number,
   epochLength: number;
   epochRewardPercent: number;
+  feeLamports: number;
 };
 type LeaderboardEntry = {
   owner: string;
@@ -52,7 +53,8 @@ export default function Home() {
           epoch: globalAccount.epoch.toNumber(),
           reward: await getTotalRewardAmount(globalAccount),
           epochLength: globalAccount.epochLength.toNumber(),
-          epochRewardPercent: globalAccount.epochRewardPercent.toNumber()
+          epochRewardPercent: globalAccount.epochRewardPercent.toNumber(),
+          feeLamports: globalAccount.feeLamports.toNumber()
         });
         setMiningCost(calculateMiningPrice(epochAccount.totalMiners.toNumber(), globalAccount));
         getLeaderboard().then((leaderboard: any[]) => {
@@ -112,6 +114,7 @@ export default function Home() {
             reward: globalAccount.reward,
             epochLength: globalAccount.epochLength,
             epochRewardPercent: globalAccount.epochRewardPercent,
+            feeLamports: globalAccount.feeLamports
           };
         });
         setMiningCost(calculateMiningPrice(1, globalAccount));
@@ -127,7 +130,6 @@ export default function Home() {
       setIsMining(true);
       setSucceededTransaction(true);
     } catch (e) {
-      console.error(e);
       setFailedTransaction(true);
     } finally {
       setSendingTransaction(false);
