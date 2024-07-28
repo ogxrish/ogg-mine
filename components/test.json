@@ -1,5 +1,5 @@
 {
-  "address": "6YVNXrYevrCN6VQgDzx5dWY9eJizBW9hSmts62YhbziH",
+  "address": "7ZU14GnHB6bBvF2Aum6ehHaXgjYE24WPzEBsBPddptVL",
   "metadata": {
     "name": "test",
     "version": "0.1.0",
@@ -779,11 +779,6 @@
       ],
       "accounts": [
         {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
           "name": "program_authority",
           "writable": true,
           "pda": {
@@ -801,16 +796,16 @@
           }
         },
         {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ]
+      "args": []
     },
     {
       "name": "withdraw_program_token",
@@ -971,6 +966,11 @@
       "code": 6004,
       "name": "InvalidEpoch",
       "msg": "Invalid epoch"
+    },
+    {
+      "code": 6005,
+      "name": "NoFeesToWithdraw",
+      "msg": "No fees to withdraw"
     }
   ],
   "types": [

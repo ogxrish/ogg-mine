@@ -4,7 +4,7 @@ import { getAssociatedTokenAddressSync, getAccount } from "@solana/spl-token";
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 
 export const programId = new PublicKey(test.address);
-const mint: PublicKey = process.env.NEXT_PUBLIC_NETWORK === "devnet" ? new PublicKey("AcVUQak9zpshPVV5gyEasYbfH7AaweBdBazRav6enrCA") : new PublicKey("2sP9bY51NdqHGtHQfRduxUTnuPvugPAoPqtfrBR2VRCL");
+const mint: PublicKey = process.env.NEXT_PUBLIC_NETWORK === "devnet" ? new PublicKey("3TAHeRZ9pkiUU5GbPfxEJAEXhM4ARmMZTqvRdWooU54M") : new PublicKey("2sP9bY51NdqHGtHQfRduxUTnuPvugPAoPqtfrBR2VRCL");
 function getProgram() {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
