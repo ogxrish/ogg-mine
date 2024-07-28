@@ -25,7 +25,7 @@ export default function WalletButton() {
             <div id="click" style={{ display: "none" }}>
                 <WalletMultiButton />
             </div>
-            <button className="hover:opacity-80" onClick={action} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+            <button className="bg-black" onClick={action} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                 <div className=" items-center flex gap-2 p-1 pl-3">
                     <div className="text-xs md:text-base shadow-inner shadow-yellow-300 flex items-center border px-6 py-4 gap-2 border-yellow-500 text-yellow-400">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
