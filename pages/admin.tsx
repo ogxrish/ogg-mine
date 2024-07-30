@@ -1,5 +1,5 @@
 import BasicButton from "@/components/BasicButton";
-import { changeData, fund, getGlobalAccount, getProgramBalance, getProgramSolBalance, initialize, newEpoch } from "@/components/utils";
+import { changeData, fund, getGlobalAccount, getProgramBalance, getProgramSolBalance, initialize, newEpoch, TOKEN_DECIMALS } from "@/components/utils";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 
@@ -33,7 +33,7 @@ export default function Admin() {
                 if (globalAccount.epoch.toNumber() === 0 || Date.now() / 1000 > endTime) {
                     setEpochOver(true);
                 }
-                setEpochLength(globalAccount.epochLength);
+                setEpochLength(globalAccount.epochsPerDay);
                 setEpochRewardPercent(globalAccount.epochRewardPercent);
                 setFeeAmount(globalAccount.feeLamports);
                 setGlobalAccount(globalAccount);
@@ -94,9 +94,9 @@ export default function Admin() {
                 <div className="flex flex-col justify-center items-center gap-2">
                     <p>Epoch: {globalAccount?.epoch.toNumber()}</p>
                     <p>Epoch Reward Percent: {globalAccount?.epochRewardPercent.toNumber()}</p>
-                    <p>Epoch Length (secs): {globalAccount?.epochLength.toNumber()}</p>
+                    <p>Epochs Per Day: {globalAccount?.epochsPerDay.toNumber()}</p>
                     <p>Time till epoch end: {Math.floor(globalAccount?.epochEnd.toNumber() - Date.now() / 1000)} seconds {`${Math.floor(globalAccount?.epochEnd.toNumber() - Date.now() / 1000) < 0 ? "(Epoch is over...)" : ""}`}</p>
-                    <p>Current program $OGG balance: {balance.toString()}</p>
+                    <p>Current program $OGG balance: {(balance / BigInt(10 ** TOKEN_DECIMALS)).toString()}</p>
                     <p>Current program $SOL balance: {solBalance.toString()}</p>
                     <div className="flex flex-col justify-center items-center gap-2 border border-white rounded-lg p-4">
                         <p className="italic"> Fund amount</p>
@@ -112,9 +112,9 @@ export default function Admin() {
                     <div className="flex flex-col justify-center items-center gap-2">
                         <div className="flex flex-row justify-center items-center gap-4">
                             <div className="flex flex-col justify-center items-center gap-2 border-2 border-white p-4 rounded-lg">
-                                <p>Epoch length in seconds</p>
+                                <p>Epochs per day </p>
                                 <input
-                                    placeholder="Epoch Length"
+                                    placeholder="Epochs per day"
                                     value={epochLength}
                                     type="number"
                                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEpochLength(Number(event.target.value))}
