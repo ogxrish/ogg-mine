@@ -6,7 +6,7 @@ import TransactionPending from "@/components/TransactionPending";
 import TransactionFailure from "@/components/TransactionFailure";
 import TransactionSuccess from "@/components/TransactionSuccess";
 import WalletButton from "@/components/WalletButton";
-import { calculateMiningPrice, claim, getClaimableAmount, getEpochAccount, getGlobalAccount, getLeaderboard, getTotalRewardAmount, isUserMining, mine, newEpoch, toHexString } from "@/components/utils";
+import { calculateMiningPrice, claim, getClaimableAmount, getEpochAccount, getGlobalAccount, getLeaderboard, getTotalRewardAmount, isUserMining, mine, newEpoch, toHexString, TOKEN_DECIMALS } from "@/components/utils";
 import LoadedText from "@/components/LoadedText";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -18,7 +18,7 @@ type GlobalAccount = {
   epochEnd: number,
   epoch: number,
   reward: number,
-  epochLength: number;
+  epochsPerDay: number;
   epochRewardPercent: number;
   feeLamports: number;
 };
@@ -52,7 +52,7 @@ export default function Home() {
           epochEnd: globalAccount.epochEnd.toNumber(),
           epoch: globalAccount.epoch.toNumber(),
           reward: await getTotalRewardAmount(globalAccount),
-          epochLength: globalAccount.epochLength.toNumber(),
+          epochsPerDay: globalAccount.epochsPerDay.toNumber(),
           epochRewardPercent: globalAccount.epochRewardPercent.toNumber(),
           feeLamports: globalAccount.feeLamports.toNumber()
         });
@@ -112,7 +112,7 @@ export default function Home() {
             epochEnd: Date.now() + 86400,
             epoch: globalAccount.epoch + 1,
             reward: globalAccount.reward,
-            epochLength: globalAccount.epochLength,
+            epochsPerDay: globalAccount.epochsPerDay,
             epochRewardPercent: globalAccount.epochRewardPercent,
             feeLamports: globalAccount.feeLamports
           };
@@ -197,7 +197,7 @@ export default function Home() {
                   <p className="text-xs md:text-sm lg:text-base font-extrabold">{`EPOCH 0x${toHexString(globalAccount?.epoch || 0)}`}</p>
                 </div>
                 <LoadedText start="Miners" value={globalAccount?.miners} />
-                <LoadedText start="Epoch Reward" text="&%%& $OGG" value={globalAccount?.reward} />
+                <LoadedText start="Epoch Reward" text="&%%& $OGG" value={globalAccount ? Math.round(globalAccount.reward / 10 ** TOKEN_DECIMALS * 1000) / 1000 : undefined} />
                 <LoadedText start="Mining Cost" text="&%%& SOL" value={miningCost} />
                 <div className="flex flex-col justify-center items-center gap-1 md:gap-2">
                   {timeLeft < 0 ?
@@ -212,7 +212,7 @@ export default function Home() {
               state === 1 ?
                 <>
                   <p className="uppercase text-4xl lg:text-6xl font-extrabold mb-10">CLAIM</p>
-                  <p className="text-4xl font-bold">{`${claimable} $OGG`}</p>
+                  <p className="text-4xl font-bold">{`${Math.round(claimable / (10 ** TOKEN_DECIMALS) * 1000) / 1000} $OGG`}</p>
                   <BasicButton onClick={onClaim} text="Claim" />
                 </>
                 :

@@ -1,5 +1,5 @@
 {
-  "address": "7ZU14GnHB6bBvF2Aum6ehHaXgjYE24WPzEBsBPddptVL",
+  "address": "97PknNK44vrCKs88WpEXQwDqhRFS4SZwVVWyo2BjFstn",
   "metadata": {
     "name": "test",
     "version": "0.1.0",
@@ -50,7 +50,7 @@
           "type": "u64"
         },
         {
-          "name": "epoch_length",
+          "name": "epochs_per_day",
           "type": "u64"
         },
         {
@@ -1012,7 +1012,7 @@
             "type": "u64"
           },
           {
-            "name": "epoch_length",
+            "name": "epochs_per_day",
             "type": "u64"
           },
           {
