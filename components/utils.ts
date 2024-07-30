@@ -7,7 +7,7 @@ export const programId = new PublicKey(test.address);
 export const TOKEN_DECIMALS = 9;
 const mint: PublicKey = process.env.NEXT_PUBLIC_NETWORK === "devnet" ?
     new PublicKey("A27kk6wucoGXJdEG9HYURnk9HxByGnAMQDEQuDNUY9BC") :
-    new PublicKey("2sP9bY51NdqHGtHQfRduxUTnuPvugPAoPqtfrBR2VRCL");
+    new PublicKey("5gJg5ci3T7Kn5DLW4AQButdacHJtvADp7jJfNsLbRc1k");
 function getProgram() {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
