@@ -124,6 +124,9 @@ export async function initialize(wallet: PublicKey) {
         [Buffer.from("epoch"), new BN(0).toArrayLike(Buffer, "le", 8)],
         programId,
     );
+    const i0 = await program.methods.initializeEpoch(new BN(0)).accounts({
+        signer: wallet,
+    }).transaction();
     const i1 = await program.methods.initialize().accounts({
         signer: wallet,
         mint,
@@ -133,7 +136,7 @@ export async function initialize(wallet: PublicKey) {
         prevEpochAccount,
     }).transaction();
     const tx = new Transaction();
-    tx.add(i1, i2);
+    tx.add(i0, i1, i2);
     tx.feePayer = wallet;
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
     await provider.sendAndConfirm(tx);
