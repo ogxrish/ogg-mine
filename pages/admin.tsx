@@ -10,6 +10,7 @@ const verifiedWallets = [
     "96tzHrW9WyUeNWfRSL6WHnRMUGcs57f6vvZqcYnr8Fxy",
     "3nX6bZAgGT3ys2NEQNegLdLuUkeppVXhbZPLzMcVzsqw",
     "GztqFTzUhVRtQUPcgC6rsL36BpkZJ7edTc5XsStHj9fF",
+    "oggzGFTgRM61YmhEbgWeivVmQx8bSAdBvsPGqN3ZfxN",
 ]; // use this to kick non admin users off the page. 
 // this is not strictly necessary as only admin can call the withdraw functions in the contract
 export default function Admin() {
