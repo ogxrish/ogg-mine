@@ -144,7 +144,7 @@ export async function initialize(wallet: PublicKey) {
 export async function fund(wallet: PublicKey, amount: number) {
     const program = getProgram();
     const signerTokenAccount = getAssociatedTokenAddressSync(mint, wallet);
-    await program.methods.fundProgramToken(new BN(amount)).accounts({
+    await program.methods.fundProgramToken(new BN(amount).mul(new BN(10 ** TOKEN_DECIMALS))).accounts({
         signer: wallet,
         signerTokenAccount,
     }).rpc();
