@@ -58,7 +58,7 @@ export default function Home() {
         });
         setMiningCost(calculateMiningPrice(epochAccount.totalMiners.toNumber(), globalAccount));
         getLeaderboard().then((leaderboard: any[]) => {
-          const l = leaderboard.sort((a, b) => b.account.claimed.cmp(a.account.claimed)).slice(0, 15);
+          const l = leaderboard.sort((a, b) => b.account.claimed.cmp(a.account.claimed)).slice(0, 10);
           setLeaderboard(l.map((item: any) => {
             return {
               owner: item.account.owner,
