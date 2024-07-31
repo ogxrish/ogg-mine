@@ -209,7 +209,7 @@ export default function Home() {
                 </div>
               </>
               :
-              state === 1 ?
+              state === 1 || state === undefined ?
                 <>
                   <p className="uppercase text-4xl lg:text-6xl font-extrabold mb-10">CLAIM</p>
                   <p className="text-4xl font-bold">{`${Math.round(claimable / (10 ** TOKEN_DECIMALS) * 1000) / 1000} $OGG`}</p>
