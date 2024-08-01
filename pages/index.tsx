@@ -6,12 +6,13 @@ import TransactionPending from "@/components/TransactionPending";
 import TransactionFailure from "@/components/TransactionFailure";
 import TransactionSuccess from "@/components/TransactionSuccess";
 import WalletButton from "@/components/WalletButton";
-import { calculateMiningPrice, claim, getClaimableAmount, getEpochAccount, getGlobalAccount, getLeaderboard, getTotalRewardAmount, isUserMining, mine, newEpoch, toHexString, TOKEN_DECIMALS } from "@/components/utils";
+import { calculateMiningPrice, claim, commas, getClaimableAmount, getEpochAccount, getGlobalAccount, getLeaderboard, getTotalRewardAmount, isUserMining, mine, newEpoch, toHexString, TOKEN_DECIMALS } from "@/components/utils";
 import LoadedText from "@/components/LoadedText";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
 import { useRouter } from "next/router";
 import GradientBorder from "@/components/GradientBorder";
+import { BN } from "@coral-xyz/anchor";
 
 type GlobalAccount = {
   miners: number,
@@ -62,7 +63,7 @@ export default function Home() {
           setLeaderboard(l.map((item: any) => {
             return {
               owner: item.account.owner,
-              claimed: item.account.claimed.toString(10),
+              claimed: commas(item.account.claimed.div(new BN(10 ** TOKEN_DECIMALS)).toString(10)),
               epochs: item.account.epochs.toString(10),
             };
           }));

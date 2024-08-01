@@ -225,3 +225,13 @@ export function toHexString(number: number) {
 export function calculateMiningPrice(miners: number, globalAccount: any) {
     return (globalAccount.feeLamports * miners ** 2) / LAMPORTS_PER_SOL;
 }
+
+export function commas(number: string): string {
+    return number.split("").reverse().map((s: string, i: number) => {
+        if (i % 3 === 0 && i != 0) {
+            return `${s},`;
+        } else {
+            return s;
+        }
+    }).reduce((prev, curr) => curr + prev, "");
+}
