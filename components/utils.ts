@@ -45,7 +45,6 @@ export async function getTotalRewardAmount(globalAccount: any): Promise<number> 
     const acc = await getAccount(connection, account);
     return Number(acc.amount.toString()) / 100 * globalAccount.epochRewardPercent.toNumber();
 }
-const STARTING_REWARD = 1000;
 async function reward(epoch: number, program: any): Promise<number> {
     const [epochAccountAddress] = PublicKey.findProgramAddressSync(
         [Buffer.from("epoch"), new BN(epoch).toArrayLike(Buffer, "le", 8)],
@@ -198,9 +197,9 @@ export async function claim(wallet: PublicKey, current: number) {
         }
     ]);
     const signerTokenAccount = getAssociatedTokenAddressSync(mint, wallet);
-    for (let i = 0; i < accounts.length; i += 10) {
+    for (let i = 0; i < accounts.length; i += 5) {
         const tx = new Transaction();
-        for (let ii = i; ii < i + 10 && accounts[ii]; ii++) {
+        for (let ii = i; ii < i + 5 && accounts[ii]; ii++) {
             if (accounts[ii].account.epoch.toNumber() === current) continue;
             const ix = await program.methods.claim(accounts[ii].account.epoch).accounts({
                 signer: wallet,
