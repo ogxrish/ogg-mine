@@ -13,6 +13,7 @@ import LeaderboardRow from "@/components/LeaderboardRow";
 import { useRouter } from "next/router";
 import GradientBorder from "@/components/GradientBorder";
 import { BN } from "@coral-xyz/anchor";
+import Chart from "@/components/Chart";
 
 type GlobalAccount = {
   miners: number,
@@ -41,6 +42,27 @@ export default function Home() {
   const [isMining, setIsMining] = useState<boolean>(false);
   const [claimable, setClaimable] = useState<number>(0);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>();
+  const [chartData, setChartData] = useState<any>();
+  const [infoData, setInfoData] = useState<any>();
+  useEffect(() => {
+    if (globalAccount) {
+      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/data?start=${Math.max(globalAccount.epoch - 251, 0)}&end=${globalAccount.epoch - 1}`).then(async (data) => {
+        const json = await data.json();
+        json.incremental = json.incremental.map((i: any) => {
+          return {
+            id: Number(i.id),
+            purchasedOgg: Number((BigInt(i.purchasedOgg) / BigInt(10 ** TOKEN_DECIMALS)).toString()),
+            reward: Number((BigInt(i.reward) / BigInt(10 ** TOKEN_DECIMALS)).toString()),
+            totalMiners: Number(i.totalMiners),
+            unclaimedOgg: Number((BigInt(i.unclaimedOgg) / BigInt(10 ** TOKEN_DECIMALS)).toString()),
+          };
+        }).sort((a: any, b: any) => a.id - b.id);
+        setChartData(json.incremental);
+        setInfoData(json.single);
+        console.log(json);
+      }).catch(console.error);
+    }
+  }, [globalAccount]);
   useEffect(() => {
     (async () => {
       const globalAccount: any = await getGlobalAccount();
@@ -183,7 +205,8 @@ export default function Home() {
           <TransactionPending />
         </div>
       }
-      <div className="flex flex-row justify-center items-center gap-4">
+      <div className="grid grid-cols-4 place-items-center items-center w-[90%] lg:w-[70%] xl:w-[60%] gap-4">
+        <BasicButton onClick={() => setState(3)} text="Info" disabled={state === 3} />
         <BasicButton onClick={() => setState(0)} text="Mine" disabled={state === 0} />
         <BasicButton onClick={() => setState(1)} text="Claim" disabled={state === 1} />
         <BasicButton onClick={() => setState(2)} text="Leaderboard" disabled={state === 2} />
@@ -200,7 +223,7 @@ export default function Home() {
                 <LoadedText start="Miners" value={globalAccount?.miners} />
                 <LoadedText start="Epoch Reward" text="&%%& $OGG" value={globalAccount ? Math.round(globalAccount.reward / 10 ** TOKEN_DECIMALS * 1000) / 1000 : undefined} />
                 <LoadedText start="Mining Cost" text="&%%& SOL" value={miningCost} />
-                <div className="flex flex-col justify-center items-center gap-1 md:gap-2">
+                <div className="flex flex-col w-[150px] lg:w-[200px] xl:w-[250px] justify-center items-center gap-1 md:gap-2">
                   {timeLeft < 0 ?
                     <BasicButton onClick={onMine} text="Mine in new epoch" />
                     :
@@ -214,23 +237,52 @@ export default function Home() {
                 <>
                   <p className="uppercase text-4xl lg:text-6xl font-extrabold mb-10">CLAIM</p>
                   <p className="text-4xl font-bold">{`${Math.round(claimable / (10 ** TOKEN_DECIMALS) * 1000) / 1000} $OGG`}</p>
-                  <BasicButton onClick={onClaim} text="Claim" />
+                  <div className="w-[150px] lg:w-[200px] xl:w-[250px]">
+                    <BasicButton onClick={onClaim} text="Claim" />
+                  </div>
                 </>
                 :
-                <>
-                  <p className="uppercase text-4xl lg:text-6xl font-extrabold mb-10">LEADERBOARD</p>
-                  <div className="grid grid-cols-3 w-full">
-                    <p>Owner</p>
-                    <p>$OGG Claimed</p>
-                    <p>Epochs participated in</p>
-                  </div>
-                  {leaderboard?.map((l: any, i: number) => <LeaderboardRow key={i} row={l} />)}
-                </>
+                state === 3 ?
+                  <>
+                    <p className="uppercase text-4xl lg:text-6xl font-extrabold mb-10">INFO</p>
+                    <p>Welcome to the OG Mine. The mine <ImportantSpan>emits $OGG</ImportantSpan>, the scarce reserves of the Realm of OGs.</p>
+                    <p> <ImportantSpan>60% (600M)</ImportantSpan> of $OGG is forever allocated to the mine.</p>
+                    <p>Emissions equal <ImportantSpan>1% of the mine&apos;s $OGG balance</ImportantSpan> each epoch. Epochs <ImportantSpan>last for 24 hours</ImportantSpan>  beginning at 00:00 UTC.</p>
+                    <p>Wallets can mine each epoch for their equal proportion of $OGG. <ImportantSpan>Mining cost increases with each new miner during an epoch.</ImportantSpan>  Difficulty resets each epoch.</p>
+                    <p>Mining fees <ImportantSpan>are currently paid in $SOL</ImportantSpan>.  $OGG and $OGC will soon be allowed.</p>
+                    <p>100% of mining fees collected go towards repurchasing $OGG from the open market to replenish the mine. $OGG mined but <ImportantSpan>unclaimed after 10 epochs is returned to the mine.</ImportantSpan> </p>
+                    <p>Those with $OGG reserves will fare well in the Realm of OGs</p>
+                  </>
+                  :
+                  <>
+                    <p className="uppercase text-4xl lg:text-6xl font-extrabold mb-10">STATS</p>
+                    <div className="flex flex-col justify-start items-center overflow-y-auto max-h-[300px] lg:max-h-[400px] xl:max-h-[500px] gap-2 w-full">
+                      <p>Total Epochs Completed: {globalAccount?.epoch}</p>
+                      <p>Longest mining streak: {infoData?.longestStreak}</p>
+                      <p>Unique wallets: {infoData?.uniqueWallets}</p>
+                      <Chart data={chartData} />
+                      <p className="lg:text-2xl text-xl font-bold">Leaderboard</p>
+                      <div className="grid grid-cols-3 w-full">
+                        <p>Owner</p>
+                        <p>$OGG Claimed</p>
+                        <p>Epochs participated in</p>
+                      </div>
+                      {leaderboard?.map((l: any, i: number) => <LeaderboardRow key={i} row={l} />)}
+                    </div>
+                  </>
             }
             <Countdown timeLeft={timeLeft} />
           </div>
         </GradientBorder>
       </div>
     </div>
+  );
+}
+
+function ImportantSpan({ children }: { children: React.ReactNode; }) {
+  return (
+    <span className="text-yellow-400 font-bold">
+      {children}
+    </span>
   );
 }
