@@ -209,7 +209,7 @@ export default function Home() {
         <BasicButton onClick={() => setState(3)} text="Info" disabled={state === 3} />
         <BasicButton onClick={() => setState(0)} text="Mine" disabled={state === 0} />
         <BasicButton onClick={() => setState(1)} text="Claim" disabled={state === 1} />
-        <BasicButton onClick={() => setState(2)} text="Leaderboard" disabled={state === 2} />
+        <BasicButton onClick={() => setState(2)} text="Stats" disabled={state === 2} />
       </div>
       <div className="w-full h-full flex justify-center items-center">
         <GradientBorder>
