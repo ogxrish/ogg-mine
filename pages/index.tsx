@@ -251,6 +251,7 @@ export default function Home() {
                 </div>
                 <LoadedText start="Miners" value={globalAccount?.miners} />
                 <LoadedText start="Mining Reward" value={miningReward} />
+                <LoadedText start="Epoch Reward" value={globalAccount ? globalAccount.reward / 10 ** TOKEN_DECIMALS : undefined} />
                 <LoadedText start="Mining Cost" value={miningCost} />
                 <div className="flex flex-col w-[150px] lg:w-[200px] xl:w-[250px] justify-center items-center gap-1 md:gap-2">
                   {timeLeft < 0 ?
