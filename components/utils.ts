@@ -36,14 +36,14 @@ export async function getGlobalAccount() {
         return null;
     }
 }
-export async function getTotalRewardAmount(globalAccount: any): Promise<number> {
+export async function getTotalRewardAmount(epochRewardPercent: number): Promise<number> {
     const [account] = PublicKey.findProgramAddressSync(
         [Buffer.from("token_account")],
         programId
     );
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const acc = await getAccount(connection, account);
-    return Number(acc.amount.toString()) / 100 * globalAccount.epochRewardPercent.toNumber();
+    return Number(acc.amount.toString()) / 100 * epochRewardPercent;
 }
 async function reward(epoch: number, program: any): Promise<number> {
     const [epochAccountAddress] = PublicKey.findProgramAddressSync(
@@ -233,4 +233,10 @@ export function commas(number: string): string {
             return s;
         }
     }).reduce((prev, curr) => curr + prev, "");
+}
+export async function jupQuote(from: string, to: string, amount: number) {
+    const quoteResponse = await (
+        await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${from}&outputMint=${to}&amount=${amount}&slippageBps=50`)
+    ).json();
+    return quoteResponse;
 }

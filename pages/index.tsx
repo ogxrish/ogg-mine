@@ -6,7 +6,7 @@ import TransactionPending from "@/components/TransactionPending";
 import TransactionFailure from "@/components/TransactionFailure";
 import TransactionSuccess from "@/components/TransactionSuccess";
 import WalletButton from "@/components/WalletButton";
-import { calculateMiningPrice, claim, commas, getClaimableAmount, getEpochAccount, getGlobalAccount, getLeaderboard, getTotalRewardAmount, isUserMining, mine, newEpoch, toHexString, TOKEN_DECIMALS } from "@/components/utils";
+import { calculateMiningPrice, claim, commas, getClaimableAmount, getEpochAccount, getGlobalAccount, getLeaderboard, getTotalRewardAmount, isUserMining, jupQuote, mine, newEpoch, toHexString, TOKEN_DECIMALS } from "@/components/utils";
 import LoadedText from "@/components/LoadedText";
 import Countdown from "@/components/Countdown";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -14,6 +14,7 @@ import { useRouter } from "next/router";
 import GradientBorder from "@/components/GradientBorder";
 import { BN } from "@coral-xyz/anchor";
 import Chart from "@/components/Chart";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 type GlobalAccount = {
   miners: number,
@@ -38,12 +39,13 @@ export default function Home() {
   const [globalAccount, setGlobalAccount] = useState<GlobalAccount>();
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [state, setState] = useState<number | undefined>(undefined);
-  const [miningCost, setMiningCost] = useState<number>();
+  const [miningCost, setMiningCost] = useState<string>("");
   const [isMining, setIsMining] = useState<boolean>(false);
   const [claimable, setClaimable] = useState<number>(0);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>();
   const [chartData, setChartData] = useState<any>();
   const [infoData, setInfoData] = useState<any>();
+  const [miningReward, setMiningReward] = useState<string>("");
   useEffect(() => {
     if (globalAccount) {
       fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/data?start=${Math.max(globalAccount.epoch - 251, 0)}&end=${globalAccount.epoch - 1}`).then(async (data) => {
@@ -70,16 +72,23 @@ export default function Home() {
         const diff = globalAccount.epochEnd.toNumber() - Date.now() / 1000;
         setTimeLeft(diff);
         const epochAccount: any = await getEpochAccount(globalAccount.epoch.toNumber());
+        const totalRewardAmount = await getTotalRewardAmount(globalAccount);
+        const totalMiners = epochAccount.totalMiners.toNumber();
         setGlobalAccount({
-          miners: epochAccount.totalMiners.toNumber(),
+          miners: totalMiners,
           epochEnd: globalAccount.epochEnd.toNumber(),
           epoch: globalAccount.epoch.toNumber(),
-          reward: await getTotalRewardAmount(globalAccount),
+          reward: totalRewardAmount,
           epochsPerDay: globalAccount.epochsPerDay.toNumber(),
           epochRewardPercent: globalAccount.epochRewardPercent.toNumber(),
           feeLamports: globalAccount.feeLamports.toNumber()
         });
-        setMiningCost(calculateMiningPrice(epochAccount.totalMiners.toNumber(), globalAccount));
+        // const miningCost = calculateMiningPrice(epochAccount.totalMiners.toNumber(), globalAccount);
+        // const quote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", miningCost * LAMPORTS_PER_SOL);
+        // setMiningCost(`${miningCost} SOL | $${Math.round(quote.outAmount * 100 / 10 ** 6) / 100}`);
+        // const miningReward = Math.round(totalRewardAmount / totalMiners / 10 ** TOKEN_DECIMALS * 1000) / 1000;
+        // const quote2 = await jupQuote("5gJg5ci3T7Kn5DLW4AQButdacHJtvADp7jJfNsLbRc1k", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", miningReward * 10 ** TOKEN_DECIMALS);
+        // setMiningReward(`${miningReward} $OGG | $${Math.round(quote2.outAmount * 100 / 10 ** 6) / 100}`);
         getLeaderboard().then((leaderboard: any[]) => {
           const l = leaderboard.sort((a, b) => b.account.claimed.cmp(a.account.claimed)).slice(0, 10);
           setLeaderboard(l.map((item: any) => {
@@ -93,6 +102,19 @@ export default function Home() {
       }
     })();
   }, []);
+  useEffect(() => {
+    if (globalAccount) {
+      (async () => {
+        const miningCost = calculateMiningPrice(globalAccount.miners, globalAccount);
+        const totalRewardAmount = await getTotalRewardAmount(globalAccount.epochRewardPercent);
+        const quote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", miningCost * LAMPORTS_PER_SOL);
+        setMiningCost(`${miningCost} SOL | $${(quote.outAmount / 10 ** 6).toFixed(2)}`);
+        const miningReward = Math.round(totalRewardAmount / globalAccount.miners / 10 ** TOKEN_DECIMALS * 1000) / 1000;
+        const quote2 = await jupQuote("5gJg5ci3T7Kn5DLW4AQButdacHJtvADp7jJfNsLbRc1k", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", miningReward * 10 ** TOKEN_DECIMALS);
+        setMiningReward(`${miningReward} $OGG | $${(quote2.outAmount / 10 ** 6).toFixed(2)}`);
+      })();
+    }
+  }, [globalAccount]);
   useEffect(() => {
     if (router && router.isReady) {
       const { state } = router.query;
@@ -122,6 +144,9 @@ export default function Home() {
       })();
     }
   }, [publicKey, globalAccount, isMining]);
+  useEffect(() => {
+
+  }, [globalAccount]);
   const onMine = async () => {
     if (!publicKey || !globalAccount) return;
     try {
@@ -140,7 +165,9 @@ export default function Home() {
             feeLamports: globalAccount.feeLamports
           };
         });
-        setMiningCost(calculateMiningPrice(1, globalAccount));
+        // const miningCost = calculateMiningPrice(1, globalAccount);
+        // const quote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", miningCost * LAMPORTS_PER_SOL);
+        // setMiningCost(`${miningCost} SOL | $${Math.round(quote.outAmount * 100 / 10 ** 6) / 100}`);
       } else {
         setGlobalAccount((globalAccount: any) => {
           return {
@@ -148,7 +175,9 @@ export default function Home() {
             miners: globalAccount.miners + 1
           };
         });
-        setMiningCost(calculateMiningPrice(globalAccount.miners + 1, globalAccount));
+        // const miningCost = calculateMiningPrice(globalAccount.miners + 1, globalAccount);
+        // const quote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", miningCost * LAMPORTS_PER_SOL);
+        // setMiningCost(`${miningCost} SOL | $${Math.round(quote.outAmount * 100 / 10 ** 6) / 100}`);
       }
       setIsMining(true);
       setSucceededTransaction(true);
@@ -221,8 +250,8 @@ export default function Home() {
                   <p className="text-xs md:text-sm lg:text-base font-extrabold">{`EPOCH 0x${toHexString(globalAccount?.epoch || 0)}`}</p>
                 </div>
                 <LoadedText start="Miners" value={globalAccount?.miners} />
-                <LoadedText start="Epoch Reward" text="&%%& $OGG" value={globalAccount ? Math.round(globalAccount.reward / 10 ** TOKEN_DECIMALS * 1000) / 1000 : undefined} />
-                <LoadedText start="Mining Cost" text="&%%& SOL" value={miningCost} />
+                <LoadedText start="Mining Reward" value={miningReward} />
+                <LoadedText start="Mining Cost" value={miningCost} />
                 <div className="flex flex-col w-[150px] lg:w-[200px] xl:w-[250px] justify-center items-center gap-1 md:gap-2">
                   {timeLeft < 0 ?
                     <BasicButton onClick={onMine} text="Mine in new epoch" />
