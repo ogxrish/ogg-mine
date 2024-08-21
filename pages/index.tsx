@@ -251,8 +251,8 @@ export default function Home() {
                   <p className="text-xs md:text-sm lg:text-base font-extrabold">{`EPOCH 0x${toHexString(globalAccount?.epoch || 0)}`}</p>
                 </div>
                 <LoadedText start="Miners" value={globalAccount?.miners} />
-                <LoadedText start="Mining Reward" value={miningReward} />
                 <LoadedText start="Epoch Reward" text="&%%& $OGG" value={globalAccount ? Math.round(globalAccount.reward / 10 ** TOKEN_DECIMALS) : undefined} />
+                <LoadedText start="Mining Reward" value={miningReward} />
                 <LoadedText start="Mining Cost" value={miningCost} />
                 <div className="flex flex-col w-[150px] lg:w-[200px] xl:w-[250px] justify-center items-center gap-1 md:gap-2">
                   {timeLeft < 0 ?
