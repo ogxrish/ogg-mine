@@ -2,6 +2,7 @@ import ContentLoader from "react-content-loader";
 
 
 export default function LoadedText({ start, text, value }: { start: string, text?: string, value: any | undefined; }) {
+
     if (value !== undefined) {
         const replaced = text?.replace("&%%&", String(value)) || String(value);
         return (

@@ -51,8 +51,6 @@ async function reward(epoch: number, program: any): Promise<number> {
         programId,
     );
     const data = await program.account.epochAccount.fetch(epochAccountAddress);
-    console.log(data);
-    console.log(data.reward.toNumber());
     return data.reward.toNumber() / data.totalMiners.toNumber();
 }
 export async function getClaimableAmount(wallet: PublicKey, current: number) {

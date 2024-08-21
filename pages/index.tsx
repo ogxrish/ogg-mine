@@ -72,7 +72,8 @@ export default function Home() {
         const diff = globalAccount.epochEnd.toNumber() - Date.now() / 1000;
         setTimeLeft(diff);
         const epochAccount: any = await getEpochAccount(globalAccount.epoch.toNumber());
-        const totalRewardAmount = await getTotalRewardAmount(globalAccount);
+        const totalRewardAmount = await getTotalRewardAmount(globalAccount.epochRewardPercent);
+        console.log({ totalRewardAmount });
         const totalMiners = epochAccount.totalMiners.toNumber();
         setGlobalAccount({
           miners: totalMiners,
@@ -251,7 +252,7 @@ export default function Home() {
                 </div>
                 <LoadedText start="Miners" value={globalAccount?.miners} />
                 <LoadedText start="Mining Reward" value={miningReward} />
-                <LoadedText start="Epoch Reward" value={globalAccount ? globalAccount.reward / 10 ** TOKEN_DECIMALS : undefined} />
+                <LoadedText start="Epoch Reward" text="&%%& $OGG" value={globalAccount ? Math.round(globalAccount.reward / 10 ** TOKEN_DECIMALS) : undefined} />
                 <LoadedText start="Mining Cost" value={miningCost} />
                 <div className="flex flex-col w-[150px] lg:w-[200px] xl:w-[250px] justify-center items-center gap-1 md:gap-2">
                   {timeLeft < 0 ?
