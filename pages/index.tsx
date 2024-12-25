@@ -61,7 +61,7 @@ export default function Home() {
         }).sort((a: any, b: any) => a.id - b.id);
         setChartData(json.incremental);
         setInfoData(json.single);
-        console.log(json);
+        console.log({ json });
       }).catch(console.error);
     }
   }, [globalAccount]);
