@@ -292,6 +292,7 @@ export default function Home() {
                       <p>Longest mining streak: {infoData?.longestStreak}</p>
                       <p>Unique wallets: {infoData?.uniqueWallets}</p>
                       <Chart data={chartData} />
+
                       <p className="lg:text-2xl text-xl font-bold">Leaderboard</p>
                       <div className="grid grid-cols-3 w-full">
                         <p>Owner</p>
