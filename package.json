@@ -15,6 +15,7 @@
     "@solana/wallet-adapter-react-ui": "^0.9.35",
     "@solana/web3.js": "^1.91.8",
     "next": "14.2.3",
+    "promise-retry": "^2.0.1",
     "react": "^18",
     "react-content-loader": "^7.0.0",
     "react-dom": "^18",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/promise-retry": "^1.1.6",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",

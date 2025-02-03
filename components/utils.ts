@@ -1,13 +1,21 @@
 import test from "./test.json";
-import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { getAssociatedTokenAddressSync, getAccount } from "@solana/spl-token";
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+import {
+    BlockhashWithExpiryBlockHeight,
+    Connection,
+    TransactionExpiredBlockheightExceededError,
+    VersionedTransactionResponse,
+} from "@solana/web3.js";
+import promiseRetry from "promise-retry";
 
 export const programId = new PublicKey(test.address);
 export const TOKEN_DECIMALS = 9;
 const mint: PublicKey = process.env.NEXT_PUBLIC_NETWORK === "devnet" ?
     new PublicKey("A27kk6wucoGXJdEG9HYURnk9HxByGnAMQDEQuDNUY9BC") :
     new PublicKey("5gJg5ci3T7Kn5DLW4AQButdacHJtvADp7jJfNsLbRc1k");
+const ogcMint: PublicKey = new PublicKey("DH5JRsRyu3RJnxXYBiZUJcwQ9Fkb562ebwUsufpZhy45");
 function getProgram() {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
@@ -163,10 +171,35 @@ export async function newEpoch(wallet: PublicKey, epoch: number) {
         prevEpochAccount
     }).rpc();
 }
-export async function mine(wallet: PublicKey, epoch: number, timeLeft: number) {
+export async function mine(wallet: PublicKey, epoch: number, timeLeft: number, swap: boolean, amount: number) {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const provider = new AnchorProvider(connection, (window as any).solana, AnchorProvider.defaultOptions());
     const program = new Program(test as any, provider) as any;
+    const transaction = new Transaction();
+    if (swap) {
+        const transaction = await jupiterSwapTx(amount, wallet);
+        const latestBlockHash = await connection.getLatestBlockhash();
+        console.log("here");
+        // Execute the transaction
+        const tx = await provider.wallet.signTransaction(transaction);
+        const rawTransaction = tx.serialize();
+        const result = await transactionSenderAndConfirmationWaiter({
+            connection,
+            serializedTransaction: rawTransaction as any,
+            blockhashWithExpiryBlockHeight: latestBlockHash
+        });
+        console.log(result?.transaction.signatures);
+        // const txid = await connection.sendRawTransaction(rawTransaction, {
+        //     skipPreflight: true,
+        //     maxRetries: 2
+        // });
+
+        // const sig = await connection.confirmTransaction({
+        //     blockhash: latestBlockHash.blockhash,
+        //     lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        //     signature: txid
+        // });
+    }
     if (timeLeft < 0) {
         const [prevEpochAccount] = PublicKey.findProgramAddressSync(
             [Buffer.from("epoch"), new BN(epoch).toArrayLike(Buffer, "le", 8)],
@@ -174,13 +207,14 @@ export async function mine(wallet: PublicKey, epoch: number, timeLeft: number) {
         );
         const i1 = await program.methods.newEpoch(new BN(epoch + 1)).accounts({ signer: wallet, prevEpochAccount }).transaction();
         const i2 = await program.methods.mine(new BN(epoch + 1)).accounts({ signer: wallet }).transaction();
-        const transaction = new Transaction().add(i1, i2);
-        await provider.sendAndConfirm(transaction);
+        transaction.add(i1, i2);
     } else {
-        await program.methods.mine(new BN(epoch)).accounts({
+        const tx = await program.methods.mine(new BN(epoch)).accounts({
             signer: wallet
-        }).rpc();
+        }).transaction();
+        transaction.add(tx);
     }
+    await provider.sendAndConfirm(transaction);
 }
 export async function claim(wallet: PublicKey, current: number) {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
@@ -237,4 +271,133 @@ export async function jupQuote(from: string, to: string, amount: number) {
         await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${from}&outputMint=${to}&amount=${amount}&slippageBps=50`)
     ).json();
     return quoteResponse;
+}
+
+export async function jupiterSwapTx(amount: number, publicKey: PublicKey) {
+    const quoteResponse = await (
+        await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${ogcMint.toString()}&outputMint=So11111111111111111111111111111111111111112&amount=${amount}&slippageBps=50`)
+    ).json();
+    const { swapTransaction } = await (
+        await fetch('https://quote-api.jup.ag/v6/swap', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                // quoteResponse from /quote api
+                quoteResponse,
+                // user public key to be used for the swap
+                userPublicKey: publicKey.toString(),
+                // auto wrap and unwrap SOL. default is true
+                wrapAndUnwrapSol: true,
+                // Optional, use if you want to charge a fee.  feeBps must have been passed in /quote API.
+                // feeAccount: "fee_account_public_key"
+            })
+        })
+    ).json();
+    const swapTransactionBuf = Buffer.from(swapTransaction, 'base64');
+    let transaction = VersionedTransaction.deserialize(swapTransactionBuf as any);
+    return transaction;
+}
+
+type TransactionSenderAndConfirmationWaiterArgs = {
+    connection: Connection;
+    serializedTransaction: Buffer;
+    blockhashWithExpiryBlockHeight: BlockhashWithExpiryBlockHeight;
+};
+
+const SEND_OPTIONS = {
+    skipPreflight: true,
+};
+function wait(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+export async function transactionSenderAndConfirmationWaiter({
+    connection,
+    serializedTransaction,
+    blockhashWithExpiryBlockHeight,
+}: TransactionSenderAndConfirmationWaiterArgs): Promise<VersionedTransactionResponse | null> {
+    const txid = await connection.sendRawTransaction(
+        serializedTransaction,
+        SEND_OPTIONS
+    );
+
+    const controller = new AbortController();
+    const abortSignal = controller.signal;
+
+    const abortableResender = async () => {
+        while (true) {
+            await wait(2_000);
+            if (abortSignal.aborted) return;
+            try {
+                await connection.sendRawTransaction(
+                    serializedTransaction,
+                    SEND_OPTIONS
+                );
+            } catch (e) {
+                console.warn(`Failed to resend transaction: ${e}`);
+            }
+        }
+    };
+
+    try {
+        abortableResender();
+        const lastValidBlockHeight =
+            blockhashWithExpiryBlockHeight.lastValidBlockHeight;
+
+        // this would throw TransactionExpiredBlockheightExceededError
+        await Promise.race([
+            connection.confirmTransaction(
+                {
+                    ...blockhashWithExpiryBlockHeight,
+                    lastValidBlockHeight,
+                    signature: txid,
+                    abortSignal,
+                },
+                "confirmed"
+            ),
+            new Promise(async (resolve) => {
+                // in case ws socket died
+                while (!abortSignal.aborted) {
+                    await wait(2_000);
+                    const tx = await connection.getSignatureStatus(txid, {
+                        searchTransactionHistory: false,
+                    });
+                    if (tx?.value?.confirmationStatus === "confirmed") {
+                        resolve(tx);
+                    }
+                }
+            }),
+        ]);
+    } catch (e) {
+        if (e instanceof TransactionExpiredBlockheightExceededError) {
+            // we consume this error and getTransaction would return null
+            return null;
+        } else {
+            // invalid state from web3.js
+            throw e;
+        }
+    } finally {
+        controller.abort();
+    }
+
+    // in case rpc is not synced yet, we add some retries
+    const response = promiseRetry(
+        async (retry: any) => {
+            const response = await connection.getTransaction(txid, {
+                commitment: "confirmed",
+                maxSupportedTransactionVersion: 0,
+            });
+            if (!response) {
+                retry(response);
+            }
+            return response;
+        },
+        {
+            retries: 5,
+            minTimeout: 1e3,
+        }
+    );
+
+    return response;
 }

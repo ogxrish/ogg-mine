@@ -15,6 +15,7 @@ import GradientBorder from "@/components/GradientBorder";
 import { BN } from "@coral-xyz/anchor";
 import Chart from "@/components/Chart";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import Toggle from "@/components/Toggle";
 
 type GlobalAccount = {
   miners: number,
@@ -46,6 +47,8 @@ export default function Home() {
   const [chartData, setChartData] = useState<any>();
   const [infoData, setInfoData] = useState<any>();
   const [miningReward, setMiningReward] = useState<string>("");
+  const [usingOgc, setUsingOgc] = useState<boolean>(false);
+  const [miningCostOgc, setMiningCostOgc] = useState<number>(0);
   useEffect(() => {
     if (globalAccount) {
       fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/data?start=${Math.max(globalAccount.epoch - 251, 0)}&end=${globalAccount.epoch - 1}`).then(async (data) => {
@@ -109,7 +112,9 @@ export default function Home() {
         const miningCost = calculateMiningPrice(globalAccount.miners, globalAccount);
         const totalRewardAmount = await getTotalRewardAmount(globalAccount.epochRewardPercent);
         const quote = await jupQuote("So11111111111111111111111111111111111111112", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", miningCost * LAMPORTS_PER_SOL);
-        setMiningCost(`${miningCost} SOL | $${(quote.outAmount / 10 ** 6).toFixed(2)}`);
+        const quoteOgc = await jupQuote("So11111111111111111111111111111111111111112", "DH5JRsRyu3RJnxXYBiZUJcwQ9Fkb562ebwUsufpZhy45", miningCost * LAMPORTS_PER_SOL);
+        const ogcDecimals = 7;
+        setMiningCost(`${miningCost} SOL | $${(quote.outAmount / 10 ** 6).toFixed(2)} | ${(quoteOgc.outAmount / 10 ** ogcDecimals).toFixed(4)} OGC`);
         const miningReward = Math.round(totalRewardAmount / globalAccount.miners / 10 ** TOKEN_DECIMALS * 1000) / 1000;
         const quote2 = await jupQuote("5gJg5ci3T7Kn5DLW4AQButdacHJtvADp7jJfNsLbRc1k", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", miningReward * 10 ** TOKEN_DECIMALS);
         setMiningReward(`${miningReward} $OGG | $${(quote2.outAmount / 10 ** 6).toFixed(2)}`);
@@ -152,7 +157,12 @@ export default function Home() {
     if (!publicKey || !globalAccount) return;
     try {
       setSendingTransaction(true);
-      await mine(publicKey, globalAccount.epoch, timeLeft);
+      const miningCost = calculateMiningPrice(globalAccount.miners, globalAccount);
+      let quote: any = undefined;
+      if (usingOgc) {
+        quote = await jupQuote("So11111111111111111111111111111111111111112", "DH5JRsRyu3RJnxXYBiZUJcwQ9Fkb562ebwUsufpZhy45", miningCost * LAMPORTS_PER_SOL);
+      }
+      await mine(publicKey, globalAccount.epoch, timeLeft, usingOgc, quote?.outAmount);
       if (timeLeft < 0) {
         setTimeLeft(86400);
         setGlobalAccount((globalAccount: any) => {
@@ -183,6 +193,7 @@ export default function Home() {
       setIsMining(true);
       setSucceededTransaction(true);
     } catch (e) {
+      console.error(e);
       setFailedTransaction(true);
     } finally {
       setSendingTransaction(false);
@@ -254,6 +265,10 @@ export default function Home() {
                 <LoadedText start="Epoch Reward" text="&%%& $OGG" value={globalAccount ? Math.round(globalAccount.reward / 10 ** TOKEN_DECIMALS) : undefined} />
                 <LoadedText start="Mining Reward" value={miningReward} />
                 <LoadedText start="Mining Cost" value={miningCost} />
+                <div className="flex flex-row justify-center items-center gap-2">
+                  <p>Using {usingOgc ? "$OGC" : "SOL"} to pay mining fees</p>
+                  <Toggle checked={usingOgc} onChange={setUsingOgc} />
+                </div>
                 <div className="flex flex-col w-[150px] lg:w-[200px] xl:w-[250px] justify-center items-center gap-1 md:gap-2">
                   {timeLeft < 0 ?
                     <BasicButton onClick={onMine} text="Mine in new epoch" />
